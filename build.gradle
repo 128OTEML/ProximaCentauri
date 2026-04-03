@@ -17,7 +17,7 @@ java{
 
 ext{
     //the build number that this mod is made for
-    mindustryVersion = 'v155.4'
+    mindustryVersion = 'v156.2'
     jabelVersion = "93fde537c7"
     isWindows = System.getProperty("os.name").toLowerCase().contains("windows")
     sdkRoot = System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
@@ -28,9 +28,14 @@ allprojects{
     tasks.withType(JavaCompile).tap{
         configureEach{
             options.compilerArgs.addAll(['--release', '8'])
+            options.encoding = 'UTF-8'
         }
     }
 }
+
+// Set UTF-8 encoding for all tasks
+System.setProperty("file.encoding", "UTF-8")
+System.setProperty("sun.jnu.encoding", "UTF-8")
 
 dependencies{
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"

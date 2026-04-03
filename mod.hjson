@@ -19,13 +19,12 @@ MOD地图:aaenaaoaaena、ph0se-fa6r1c"
 version: 1.0
 
 #the fully qualified main class of the mod
-main: "ice-peak"
+main: "IcePeak.FlameOut"
 
 #the minimum game build required to run this mod
-minGameVersion: 154
-repo: "128OTEML/Ice-Peak"
+minGameVersion: 156
 
 #this is a java mod
-java: false
+java: true
 
 

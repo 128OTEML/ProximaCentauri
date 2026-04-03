@@ -1,0 +1,22 @@
+name: 庇护
+color: FCF287
+healthMultiplier: 4
+damage: -1
+opposites: [
+    shielded
+    碎甲
+]
+effectChance: 0.07
+effect: {
+    type: ParticleEffect
+    particles: 4
+    region: ice-peak-triangle
+    lifetime: 60
+    length: 40
+    spin: 1.5
+    baseLength: 60
+    sizeFrom: 3
+    sizeTo: 0
+    colorFrom: FCF287
+    colorTo: FCF287
+}

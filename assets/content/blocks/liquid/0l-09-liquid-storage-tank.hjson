@@ -1,0 +1,14 @@
+type: LiquidRouter
+size: 2
+solid: false
+underBullets: true
+health: 145
+liquidCapacity: 1500
+category: liquid
+squareSprite: false
+research: 0l-04-manganese-fluid-conduit
+requirements: [
+  0a-06-manganese/150
+  0a-02-steel/80
+]
+researchCostMultiplier: 0.5

@@ -9,6 +9,7 @@ MapResizeDialog.maxSize = 1200
 require("icepeak/lib");
 require("icepeak/0m-00-puller");
 require("icepeak/0m-01-pusher");
+require("icepeak/chordon");
 
 require("multi-crafter");
 require("hud");

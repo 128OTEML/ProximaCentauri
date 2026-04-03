@@ -299,6 +299,8 @@
 					"lifetime": 240,
 					"spin": 2,
 					"region": "ice-peak-infinity",
+					"homingRange": 400,
+                    "homingPower": 0.25,
 					"sizeFrom": 600,
 					"sizeTo": 0,
 					"colorFrom": "F60DFCFF",
@@ -450,6 +452,8 @@
 "absorbable":false
 "reflectable":false
 "collides": false,
+"homingRange": 400,
+"homingPower": 0.25,
 "width": 0,
 "height": 0,
 "hitSound":"lasercharge"
@@ -563,6 +567,8 @@
 		"intervalBullet":{
 		"splashDamageRadius": Infinity,
 		"instantDisappear": true,
+		"homingRange": 400,
+        "homingPower": 0.25,
 		"collides": false,
 		"splashDamage": Infinity,
 		"speed": 0,
@@ -629,6 +635,8 @@
 		"fragSpread":137.5
 		"fragBullet":{
 		"damage":Infinity
+		"homingRange": 400,
+        "homingPower": 0.25,
 		"speed":50
 		"drag":0.01
 		"width": 0,
@@ -709,6 +717,8 @@
 	    "lightningDamage":Infinity,
 		"lightningLength":100,
 		"lightningColor":"FCF412"
+		"homingRange": 400,
+        "homingPower": 0.25,
 		"speed": 15,
 		"splashDamageRadius": Infinity,
 		"splashDamage": Infinity,
@@ -799,6 +809,8 @@
 		"lightning":50,
 	    "lightningDamage":Infinity,
 		"lightningLength":100,
+		"homingRange": 400,
+        "homingPower": 0.25,
 		"lightningColor":"BD24B3FF"
 		"speed": 15,
 		"splashDamageRadius": Infinity,
@@ -886,6 +898,8 @@
 		"buildingDamageMultiplier": 0.75,
 		"width":25,
 		"damage":Infinity
+		"homingRange": 400,
+        "homingPower": 0.25,
 		"height":25
 		"speed":10
 		"lifetime": 180
@@ -950,6 +964,8 @@
 		"fragSpread":30,
 		"fragLifeMin": 1,
 		"fragLifeMax": 3,
+		"homingRange": 400,
+        "homingPower": 0.25,
 		"fragVelocityMin":1,
 		"fragVelocityMax":1.8,
 		"fragBullet":{
@@ -1108,6 +1124,8 @@
             "collidesAir": false,
             "absorbable": false,
             "reflectable": false,
+		    "homingRange": 400,
+            "homingPower": 0.25,
             "hittable": false,
             "collides": false,
             "collidesTiles": false,
@@ -1161,6 +1179,8 @@
                 "reflectable": false,
                 "hittable": false,
                 "collides": false,
+		        "homingRange": 400,
+                "homingPower": 0.25,
                 "collidesTiles": false,
                 "hitSound": "none",
                 "hitEffect": "none",
@@ -1257,6 +1277,8 @@
             "ammoMultiplier": 1,
             "buildingDamageMultiplier": 0.7,
             "absorbable": false,
+		    "homingRange": 400,
+            "homingPower": 0.25,
             "reflectable": false,
             "hittable": false,
             "collides": false,
@@ -1357,6 +1379,8 @@
 			"spin":1,
 			"backColor":"D325FF",
 			"frontColor":"964490",
+		    "homingRange": 400,
+            "homingPower": 0.25,
 			"ammoMultiplier": 1,
 			"collidesAir":false,
 			"collidesGround":false,
@@ -1420,6 +1444,8 @@
 				"hitSound":"missileLarge",
 				"splashDamageRadius": Infinity,
 				"splashDamage": Infinity,
+		        "homingRange": 400,
+                "homingPower": 0.25,
 				"trailInterval": 10,
 				"trailEffect": {
 					"type": "MultiEffect",
@@ -1486,6 +1512,8 @@
 			    "width": 18,
 			    "height": 18,
 				"damage": Infinity,
+				"homingRange": 400,
+                "homingPower": 0.25,
 				"sprite":"ice-peak-bomb-bolt",
 		        "spin": 2,
 		        "shrinkX":0.3
@@ -1555,6 +1583,8 @@
 		        "intervalBullet":{
 		        "speed": 15,
 		        "drag":-0.002
+				"homingRange": 400,
+                "homingPower": 0.25,
 				"lifetime": 240,
 			    "width": 18,
 			    "height": 18,
@@ -1744,6 +1774,8 @@
 					"fragVelocityMin":1,
 					"fragBullet":{
 						"damage":Infinity,
+						"homingRange": 400,
+                        "homingPower": 0.25,
 						"knockback":68,
 						"speed":20,
 						"sprite":"ice-peak-bomb-bolt",

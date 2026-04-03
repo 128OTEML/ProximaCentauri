@@ -1,0 +1,4 @@
+name: kill
+show: false
+healthMultiplier: 0
+damage: 8

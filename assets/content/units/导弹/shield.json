@@ -1,0 +1,149 @@
+{
+	"type": "missile"
+	"lifetime":300,
+	"flying": false,
+	"faceTarget":true,
+	"isEnemy": false,
+	"template": "MissileUnitType",
+	"speed": 0,
+	"rotateSpeed":3,
+	"loopSoundVolume":1,
+	"omniMovement":true,
+	"hidden":true,
+	"targetGround": true,
+	"lowAltitude":true,
+	//"defaultController": "RepairAI",
+    "useUnitCap": false
+    "destructibleWreck": false, 
+    "createWreck": false,
+    "createScorch": false,
+	"ammoType":{
+	"type":"PowerAmmoType",
+	"totalPower":100},
+	"hitSize":1,
+	"health": 114514,
+	"fogRadius":1,
+	"itemCapacity": 0,
+	"trailLength":7,
+	"engineOffset": 0,
+	"engineSize": 0,
+	"maxRange":0,
+	"deathExplosionEffect": "none"
+	"deathExplosionSound": "none"
+	"groundLayer": 30.1
+	"drawCell": false
+	"drawShields": false
+    "drawBody": false
+	"abilities":[
+	
+	    {
+        "type": "ShieldArcAbility",
+		"whenShooting":false,
+		"radius": 120,
+		"width": 32,
+		"max": 5000,
+		"regen": 0,
+		"cooldown": 2147467,
+		"angle": 110,
+		"angleOffset": 3
+		"pushUnits":false
+	    }
+	    {
+        "type": "ShieldArcAbility",
+		"whenShooting":false,
+		"radius": 120,
+		"width": 32,
+		"max": 5000,
+		"regen": 0,
+		"cooldown": 2147467,
+		"angle": 110,
+		"angleOffset": -3
+		"pushUnits":false
+	    }
+	    {
+        "type": "ShieldArcAbility",
+		"whenShooting":false,
+		"radius": 110,
+		"width": 32,
+		"max": 5000,
+		"regen": 0,
+		"cooldown": 2147467,
+		"angle": 110,
+		"angleOffset": -2
+		"pushUnits":false
+	    }
+	    {
+        "type": "ShieldArcAbility",
+		"whenShooting":false,
+		"radius": 110,
+		"width": 32,
+		"max": 5000,
+		"regen": 0,
+		"cooldown": 2147467,
+		"angle": 110,
+		"angleOffset": 2
+		"pushUnits":false
+	    }
+	    {
+        "type": "ShieldArcAbility",
+		"whenShooting":false,
+		"radius": 119,
+		"width": 32,
+		"max": 5000,
+		"regen": 0,
+		"cooldown": 2147467,
+		"angle": 110,
+		"angleOffset": 3
+		"pushUnits":false
+	    }
+	    {
+        "type": "ShieldArcAbility",
+		"whenShooting":false,
+		"radius": 119,
+		"width": 32,
+		"max": 5000,
+		"regen": 0,
+		"cooldown": 2147467,
+		"angle": 110,
+		"angleOffset": -3
+		"pushUnits":false
+	    }
+	    {
+        "type": "ShieldArcAbility",
+		"whenShooting":false,
+		"radius": 109,
+		"width": 32,
+		"max": 5000,
+		"regen": 0,
+		"cooldown": 2147467,
+		"angle": 110,
+		"angleOffset": -2
+		"pushUnits":false
+	    }
+	    {
+        "type": "ShieldArcAbility",
+		"whenShooting":false,
+		"radius": 109,
+		"width": 32,
+		"max": 5000,
+		"regen": 0,
+		"cooldown": 2147467,
+		"angle": 110,
+		"angleOffset": 2
+		"pushUnits":false
+	    }
+	    
+	    {
+        "type": "ShieldArcAbility",
+		"whenShooting":false,
+		"radius": 0,
+		"width": 80,
+		"max": 5000,
+		"regen": 0,
+		"cooldown": 2147467,
+		"angle": 110,
+		"angleOffset": 0
+		"pushUnits":false
+	    }
+	],
+}

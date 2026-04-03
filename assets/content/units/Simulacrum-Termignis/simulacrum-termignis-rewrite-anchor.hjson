@@ -1,0 +1,700 @@
+type: flying
+name: Rewrite anchor
+details: Don’t turn away from me.
+loopSound: loopShield
+loopSoundVolume: 325
+health: 1200000
+armor: 15
+speed: 0
+rotateSpeed: 0
+drag: 100
+accel: 0
+dpsEstimate: 0
+ammoCapacity: 325
+itemCapacity: 325
+hitSize: 160
+flying: false
+lowAltitude: false
+drawBody: false
+drawCell: false
+drawSoftShadow: false
+physics: false
+drawShields: false
+wobble: false
+deathSound: none
+ammoType: {
+    type: PowerAmmoType
+    totalPower: 325325
+}
+engineSize: 0
+buildSpeed: 0
+shadowElevation: 325325
+immunities: [
+    disarmed
+    灰烬
+    锁时
+    限制写入
+]
+abilities: [
+    {
+        type: RegenAbility
+        percentAmount: 0.05
+    }
+    {
+        type: ShieldRegenFieldAbility
+        reload: 60
+        amount: 40000
+        max: 200000
+        range: -1
+        activeEffect: none
+        applyEffect: none
+    }
+    // {
+        // type: ShieldArcAbility
+        // breakSound: shieldBreak
+        // whenShooting: false
+        // cooldownTime: 60
+        // chanceDeflect: 3.25
+        // max: 30000
+        // regen: 60
+        // angle: 361
+        // radius: 175
+        // width: 12
+    // }
+    {
+        type: StatusFieldAbility
+        duration: 180
+        reload: 120
+        range: -1
+        effect: 活性强化
+        applyEffect: none
+        activeEffect: {
+            type: MultiEffect
+            effects: [
+                {
+                    type: WaveEffect
+                    lifetime: 40
+                    offset: 90
+                    sizeFrom: 240
+                    sizeTo: 240
+                    strokeFrom: 12
+                    strokeTo: 0
+                    colorFrom: FFF589
+                    colorTo: FFF589
+                }
+                {
+                    particles: 24
+                    line: true
+                    lifetime: 60
+                    length: -300
+                    baseLength: 300
+                    offset: 120
+                    lenFrom: 0
+                    lenTo: 28
+                    strokeFrom: 4
+                    strokeTo: 0
+                    colorFrom: FFF589
+                    colorTo: FFF589
+                }
+            ]
+        }
+    }
+]
+deathExplosionEffect: {
+    type: MultiEffect
+    effects: [
+        {
+            particles: 60
+            line: true
+            lifetime: 90
+            length: 480
+            baseLength: 60
+            lenFrom: 0
+            lenTo: 40
+            strokeFrom: 6
+            strokeTo: 0
+            colorFrom: FFF589
+            colorTo: FFF589
+        }
+    ]
+}
+weapons: [
+    {
+        alwaysShooting: true
+        controllable: false
+        rotate: false
+        mirror: false
+        display: false
+        noAttack: true
+        alternate: false
+        autoTarget: false
+        reload: 325325
+        x: 0
+        y: 0
+        recoil: 0
+        recoilTime: 60
+        shootSound: none
+        shake: 0
+        shoot: {
+            type: ShootBarrel
+            firstShotDelay: 120
+            shots: 13
+            shotDelay: 180
+            barrel: [
+                0,0,0
+            ]
+        }
+        bullet: {
+            instantDisappear: true
+            damage: 0
+            speed: 0
+            lifetime: 0
+            hitEffect: none
+            hitSound: none
+            hitShake: 0
+            despawnEffect: none
+            shootEffect: none
+            smokeEffect: none
+        }
+        parts: [
+            {
+                type: HaloPart
+                progress: recoil
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: FF6464
+                colorTo: FFF589
+                sides: 3
+                shapes: 4
+                radius: 0
+                radiusTo: 48
+                triLength: 0
+                triLengthTo: 24
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 190
+                haloRadiusTo: 190
+                haloRotation: 45
+                haloRotateSpeed: 0
+                layer: 110
+            }
+            {
+                type: HaloPart
+                progress: recoil
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: 000000
+                colorTo: 000000
+                sides: 3
+                shapes: 4
+                radius: 0
+                radiusTo: 24
+                triLength: 0
+                triLengthTo: 12
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 190
+                haloRadiusTo: 190
+                haloRotation: 45
+                haloRotateSpeed: 0
+                layer: 110
+            }
+        ]
+    }
+    {
+        alwaysShooting: true
+        controllable: false
+        rotate: false
+        mirror: false
+        display: false
+        noAttack: true
+        alternate: false
+        autoTarget: false
+        reload: 325325
+        x: 0
+        y: 0
+        recoil: 0
+        recoilTime: 60
+        shootSound: none
+        shake: 0
+        shoot: {
+            type: ShootBarrel
+            firstShotDelay: 60
+            shots: 13
+            shotDelay: 180
+            barrel: [
+                0,0,0
+            ]
+        }
+        bullet: {
+            instantDisappear: true
+            damage: 0
+            speed: 0
+            lifetime: 0
+            hitEffect: none
+            hitSound: none
+            hitShake: 0
+            despawnEffect: none
+            shootEffect: none
+            smokeEffect: none
+        }
+        parts: [
+            {
+                type: HaloPart
+                progress: recoil
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: FF6464
+                colorTo: FFF589
+                sides: 3
+                shapes: 4
+                radius: 0
+                radiusTo: 56
+                triLength: 0
+                triLengthTo: 28
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 140
+                haloRadiusTo: 140
+                haloRotation: 45
+                haloRotateSpeed: 0
+                layer: 110
+            }
+            {
+                type: HaloPart
+                progress: recoil
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: 000000
+                colorTo: 000000
+                sides: 3
+                shapes: 4
+                radius: 0
+                radiusTo: 28
+                triLength: 0
+                triLengthTo: 14
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 140
+                haloRadiusTo: 140
+                haloRotation: 45
+                haloRotateSpeed: 0
+                layer: 110
+            }
+        ]
+    }
+    {
+        alwaysShooting: true
+        controllable: false
+        rotate: false
+        mirror: false
+        display: false
+        noAttack: true
+        alternate: false
+        autoTarget: false
+        reload: 325325
+        x: 0
+        y: 0
+        recoil: 0
+        recoilTime: 60
+        shootSound: none
+        shake: 0
+        shoot: {
+            type: ShootBarrel
+            //firstShotDelay: 0
+            shots: 14
+            shotDelay: 180
+            barrel: [
+                0,0,0
+            ]
+        }
+        bullet: {
+            instantDisappear: true
+            damage: 0
+            speed: 0
+            lifetime: 0
+            hitEffect: none
+            hitSound: none
+            hitShake: 0
+            despawnEffect: none
+            shootEffect: none
+            smokeEffect: none
+        }
+        parts: [
+            {
+                type: HaloPart
+                progress: recoil
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: FF6464
+                colorTo: FFF589
+                sides: 3
+                shapes: 4
+                radius: 0
+                radiusTo: 64
+                triLength: 0
+                triLengthTo: 32
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 90
+                haloRadiusTo: 90
+                haloRotation: 45
+                haloRotateSpeed: 0
+                layer: 110
+            }
+            {
+                type: HaloPart
+                progress: recoil
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: 000000
+                colorTo: 000000
+                sides: 3
+                shapes: 4
+                radius: 0
+                radiusTo: 32
+                triLength: 0
+                triLengthTo: 16
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 90
+                haloRadiusTo: 90
+                haloRotation: 45
+                haloRotateSpeed: 0
+                layer: 110
+            }
+        ]
+    }
+    {
+        alwaysShooting: true
+        controllable: false
+        rotate: false
+        mirror: false
+        display: false
+        noAttack: true
+        alternate: false
+        autoTarget: false
+        shootOnDeath: false
+        reload: 325325
+        x: 0
+        y: 0
+        recoil: 0
+        recoilTime: 2250
+        shootSound: none
+        shake: 0
+        bullet: {
+            instantDisappear: true
+            damage: 0
+            speed: 0
+            lifetime: 0
+            hitEffect: none
+            hitSound: none
+            hitShake: 0
+            despawnEffect: none
+            shootEffect: none
+            smokeEffect: none
+        }
+        parts: [
+            {
+                type: ShapePart
+                progress: recoil
+                x: 0
+                y: 0
+                circle: false
+                hollow: true
+                sides: 4
+                radius: 60
+                radiusTo: 65
+                stroke: 6
+                strokeTo: 6
+                color: FF6464
+                colorTo: FFF589
+                rotateSpeed: 0
+                rotation: 90
+                layer: 110
+            }
+            //
+            {
+                type: HaloPart
+                progress: recoil
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: FF6464
+                colorTo: FFF589
+                sides: 3
+                shapes: 4
+                radius: 26
+                radiusTo: 26
+                triLength: 130
+                triLengthTo: 130
+                rotateSpeed: 0
+                shapeRotation: 180
+                haloRadius: 210
+                haloRadiusTo: 210
+                haloRotation: 0
+                haloRotateSpeed: 0.6
+                layer: 110
+            }
+            {
+                type: HaloPart
+                progress: recoil
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: FF6464
+                colorTo: FFF589
+                sides: 3
+                shapes: 4
+                radius: 26
+                radiusTo: 26
+                triLength: 30
+                triLengthTo: 30
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 210
+                haloRadiusTo: 210
+                haloRotation: 0
+                haloRotateSpeed: 0.6
+                layer: 110
+            }
+            {
+                type: HaloPart
+                progress: recoil
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: 00000000
+                colorTo: 000000
+                sides: 3
+                shapes: 4
+                radius: 0
+                radiusTo: 13
+                triLength: 65
+                triLengthTo: 65
+                rotateSpeed: 0
+                shapeRotation: 180
+                haloRadius: 210
+                haloRadiusTo: 210
+                haloRotation: 0
+                haloRotateSpeed: 0.6
+                layer: 110
+            }
+            {
+                type: HaloPart
+                progress: recoil
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: 00000000
+                colorTo: 000000
+                sides: 3
+                shapes: 4
+                radius: 0
+                radiusTo: 13
+                triLength: 15
+                triLengthTo: 15
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 210
+                haloRadiusTo: 210
+                haloRotation: 0
+                haloRotateSpeed: 0.6
+                layer: 110
+            }
+        ]
+    }
+    {
+        alwaysShooting: true
+        controllable: false
+        rotate: false
+        mirror: false
+        display: false
+        noAttack: true
+        alternate: false
+        autoTarget: false
+        reload: 325325
+        x: 0
+        y: 0
+        recoil: 0
+        shootSound: none
+        shake: 0
+        shootStatus: 重写
+        shootStatusDuration: 2400
+        bullet: {
+            instantDisappear: true
+            damage: 0
+            speed: 0
+            lifetime: 0
+            hitEffect: none
+            hitSound: none
+            hitShake: 0
+            despawnEffect: none
+            shootEffect: none
+            smokeEffect: none
+        }
+    }
+    {
+        controllable: false
+        rotate: false
+        mirror: false
+        display: false
+        alternate: false
+        autoTarget: false
+        shootOnDeath: true
+        reload: 0
+        x: 0
+        y: 0
+        recoil: 0
+        shootSound: none
+        //shootSoundVolume: 3
+        bullet: {
+            splashDamage: 6000
+            splashDamageRadius: 360
+            splashDamagePierce: true
+            instantDisappear: true
+            pierceArmor: true
+            damage: 0
+            lifetime: 0
+            speed: 0
+            shootEffect: none
+            smokeEffect: none
+            hitEffect: none
+            hitSound: none
+            despawnEffect: none
+        }
+    }
+    {
+        alwaysShooting: true
+        controllable: false
+        rotate: false
+        mirror: false
+        display: false
+        alternate: false
+        autoTarget: false
+        reload: 325325
+        x: 0
+        y: 0
+        recoil: 0
+        shootSound: explosionReactor
+        shootSoundVolume: 3
+        shoot: {
+            type: ShootPattern
+            firstShotDelay: 2400
+        }
+        shake: 124
+        bullet: {
+            killShooter: true
+            instantDisappear: true
+            pierceArmor: true
+            damage: 0
+            lifetime: 0
+            speed: 0
+            // splashDamage: 6000
+            // splashDamageRadius: 360
+            // splashDamagePierce: true
+            smokeEffect: none
+            shootEffect: {
+                type: MultiEffect
+                effects: [
+                    {
+                        particles: 32
+                        line: true
+                        lifetime: 45
+                        length: 480
+                        baseLength: 60
+                        lenFrom: 0
+                        lenTo: 30
+                        strokeFrom: 5
+                        strokeTo: 0
+                        colorFrom: FFF589
+                        colorTo: FF6464
+                    }
+                    {
+                        particles: 40
+                        line: true
+                        lifetime: 45
+                        length: 480
+                        baseLength: 60
+                        lenFrom: 0
+                        lenTo: 40
+                        strokeFrom: 6
+                        strokeTo: 0
+                        colorFrom: FFF589
+                        colorTo: FF6464
+                    }
+                    {
+                        particles: 22
+                        region: ice-peak-triangle
+                        lifetime: 50
+                        length: 480
+                        baseLength: 60
+                        spin: 1.5
+                        sizeFrom: 10
+                        sizeTo: 0
+                        colorFrom: FFF589
+                        colorTo: FF6464
+                    }
+                    {
+                        particles: 22
+                        region: ice-peak-triangle
+                        lifetime: 50
+                        length: 480
+                        baseLength: 60
+                        spin: 1
+                        sizeFrom: 16
+                        sizeTo: 0
+                        colorFrom: FFF589
+                        colorTo: FF6464
+                    }
+                    {
+                        type: WaveEffect
+                        lifetime: 55
+                        sizeFrom: 0
+                        sizeTo: 520
+                        strokeFrom: 18
+                        strokeTo: 0
+                        colorFrom: FFF589
+                        colorTo: FF6464
+                    }
+                    {
+                        type: WaveEffect
+                        lifetime: 55
+                        sizeFrom: 60
+                        sizeTo: 520
+                        strokeFrom: 18
+                        strokeTo: 0
+                        colorFrom: FFF589
+                        colorTo: FF6464
+                    }
+                ]
+            }
+            hitEffect: none
+            hitSound: none
+            despawnEffect: none
+            hitShake: 0
+            despawnUnit: simulacrum-termignis-2
+            despawnUnitRadius: 0
+            width: 0
+            height: 0
+            shrinkX: 0
+            shrinkY: 0
+        }
+    }
+]

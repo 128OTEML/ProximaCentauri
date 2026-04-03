@@ -1,0 +1,36 @@
+{
+  "shownPlanets": ["拉克勒斯"]
+  "type": "StackConveyor",
+  "loadEffect": {
+    "type": "ParticleEffect",
+    "line": true,
+    "particles": 7,
+    "lifetime": 15,
+    "length": 25,
+    "cone": -360,
+    "lenFrom": 5,
+    "lenTo": 0,
+    "colorFrom": "151515FF",
+    "colorTo": "0B0B0BFF"
+  },
+  "unloadEffect": {
+    "type": "ParticleEffect",
+    "line": true,
+    "particles": 7,
+    "lifetime": 15,
+    "length": 25,
+    "cone": -360,
+    "lenFrom": 5,
+    "lenTo": 0,
+    "colorFrom": "151515FF",
+    "colorTo": "0B0B0BFF"
+  },
+  "health": 1000,
+  "speed": 0.2,
+  "itemCapacity": 400,
+  "requirements": [
+    "0a-00-dwarf-stellar-metal-block/1",
+  ],
+  "research": "0m-02-aluminum-high-performance-pipeline",
+  "category": "distribution"
+}

@@ -1,0 +1,601 @@
+type: flying
+name: Force write
+details: "I'll find you"
+speed: 0
+rotateSpeed: 0
+drag: 100
+accel: 0
+dpsEstimate: 0
+hitSize: 160
+flying: false
+lowAltitude: false
+drawBody: false
+drawCell: false
+drawSoftShadow: false
+physics: false
+drawShields: false
+//playerControllable: false
+wobble: false
+deathSoundVolume: 120
+deathSound: none
+ammoCapacity: 3250
+ammoType: {
+    type: PowerAmmoType
+    totalPower: 325325
+}
+engineSize: 0
+health: 800000
+armor: 120
+buildSpeed: 0
+itemCapacity: 0
+buildSpeed: 0
+loopSound: loopBuild
+loopSoundVolume: 24
+shadowElevation: 325325
+immunities: [
+    disarmed
+    灰烬
+    锁时
+    限制写入
+]
+abilities: [
+    {
+        type: ShieldArcAbility
+        breakSound: shieldBreak
+        whenShooting: false
+        cooldownTime: 600
+        chanceDeflect: 3.25
+        max: 120000
+        regen: 90
+        angle: 361
+        radius: 175
+        width: 12
+    }
+    {
+        type: RegenAbility
+        percentAmount: 0.16666666666
+    }
+    {
+        type: ShieldRegenFieldAbility
+        reload: 90
+        amount: 100000
+        max: 400000
+        range: -1
+        activeEffect: {
+            type: WaveEffect
+            lifetime: 30
+            offset: 90
+            sizeFrom: 300
+            sizeTo: 300
+            strokeFrom: 12
+            strokeTo: 0
+            colorFrom: FFF589
+            colorTo: FFF589
+        }
+        applyEffect: {
+            particles: 24
+            line: true
+            lifetime: 30
+            length: -260
+            baseLength: 300
+            offset: 60
+            lenFrom: 0
+            lenTo: 24
+            strokeFrom: 3.5
+            strokeTo: 0
+            colorFrom: FFF589
+            colorTo: FFF589
+        }
+    }
+]
+deathExplosionEffect: {
+    type: MultiEffect
+    effects: [
+        {
+            particles: 60
+            line: true
+            lifetime: 90
+            length: 480
+            baseLength: 60
+            lenFrom: 0
+            lenTo: 40
+            strokeFrom: 6
+            strokeTo: 0
+            colorFrom: FFF589
+            colorTo: FFF589
+        }
+    ]
+}
+weapons: [
+    {
+        alwaysShooting: true
+        controllable: false
+        rotate: false
+        mirror: false
+        display: false
+        noAttack: true
+        alternate: false
+        autoTarget: false
+        linearWarmup: true
+        reload: 120
+        x: 0
+        y: 0
+        recoil: 0
+        recoilTime: 60
+        shootSound: none
+        bullet: {
+            damage: 0
+            speed: 0
+            lifetime: 0
+            smokeEffect: none
+            shootEffect: none
+            hitEffect: none
+            hitSound: none
+            despawnEffect: none
+            width: 0
+            height: 0
+            shrinkX: 0
+            shrinkY: 0
+        }
+        parts: [
+            {
+                type: HaloPart
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                progress: recoil
+                color: FFF589
+                colorTo: FFF589
+                sides: 3
+                shapes: 4
+                radius: 0
+                radiusTo: 124
+                triLength: 0
+                triLengthTo: 40
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 315
+                haloRotation: 0
+                haloRotateSpeed: 0
+                layer: 110
+            }
+            {
+                type: HaloPart
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                progress: recoil
+                color: 000000
+                colorTo: 000000
+                sides: 3
+                shapes: 4
+                radius: 0
+                radiusTo: 58
+                triLength: 0
+                triLengthTo: 16
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 315
+                haloRotation: 0
+                haloRotateSpeed: 0
+                layer: 110
+            }
+        ]
+    }
+    {
+        alwaysShooting: true
+        controllable: false
+        rotate: false
+        mirror: false
+        display: false
+        //noAttack: true
+        alternate: false
+        autoTarget: false
+        linearWarmup: true
+        shootWarmupSpeed: 0.0005
+        minWarmup: 0.99
+        x: 0
+        y: 0
+        recoil: 0
+        reload: 0
+        shootSound: shockBoom
+        shootSoundVolume: 2
+        // shootStatus: kill
+        // shootStatusDuration: 3250
+        bullet: {
+            damage: 0
+            splashDamage: 3000
+            splashDamageRadius: 360
+            splashDamagePierce: true
+            speed: 0
+            lifetime: 0
+            instantDisappear: true
+            killShooter: true
+            smokeEffect: none
+            shootEffect: {
+                type: MultiEffect
+                effects: [
+                    {
+                        particles: 32
+                        line: true
+                        lifetime: 45
+                        length: 480
+                        baseLength: 60
+                        lenFrom: 0
+                        lenTo: 30
+                        strokeFrom: 5
+                        strokeTo: 0
+                        colorFrom: FFF589
+                        colorTo: FFF589
+                    }
+                    {
+                        particles: 40
+                        line: true
+                        lifetime: 45
+                        length: 480
+                        baseLength: 60
+                        lenFrom: 0
+                        lenTo: 40
+                        strokeFrom: 6
+                        strokeTo: 0
+                        colorFrom: FFF589
+                        colorTo: FFF589
+                    }
+                    {
+                        particles: 22
+                        region: ice-peak-triangle
+                        lifetime: 50
+                        length: 480
+                        baseLength: 60
+                        spin: 1.5
+                        sizeFrom: 10
+                        sizeTo: 0
+                        colorFrom: FFF589
+                        colorTo: FFF589
+                    }
+                    {
+                        particles: 22
+                        region: ice-peak-triangle
+                        lifetime: 50
+                        length: 480
+                        baseLength: 60
+                        spin: 1
+                        sizeFrom: 16
+                        sizeTo: 0
+                        colorFrom: FFF589
+                        colorTo: FFF589
+                    }
+                    {
+                        type: WaveEffect
+                        lifetime: 55
+                        sizeFrom: 0
+                        sizeTo: 520
+                        strokeFrom: 18
+                        strokeTo: 0
+                        colorFrom: FFF589
+                        colorTo: FFF589
+                    }
+                    {
+                        type: WaveEffect
+                        lifetime: 55
+                        sizeFrom: 80
+                        sizeTo: 520
+                        strokeFrom: 18
+                        strokeTo: 0
+                        colorFrom: FFF589
+                        colorTo: FFF589
+                    }
+                ]
+            }
+            hitEffect: none
+            hitSound: none
+            despawnEffect: none
+            despawnUnit: simulacrum-termignis
+            despawnUnitRadius: 0
+        }
+        parts: [
+            {
+                type: ShapePart
+                progress: warmup
+                x: 0
+                y: 0
+                circle: true
+                hollow: true
+                radius: 300
+                radiusTo: 130
+                stroke: 5
+                strokeTo: 5
+                color: FFF589
+                colorTo: FFF589
+                rotateSpeed: 0
+                rotation: 0
+                layer: 110
+            }
+            {
+                type: ShapePart
+                progress: warmup
+                x: 0
+                y: 0
+                circle: false
+                hollow: true
+                sides: 4
+                radius: 100
+                radiusTo: 120
+                stroke: 0
+                strokeTo: 7
+                color: FFF589
+                colorTo: FFF589
+                rotateSpeed: 0
+                rotation: 45
+                layer: 110
+            }
+            //
+            {
+                type: HaloPart
+                progress: warmup
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: FFF589
+                colorTo: FFF589
+                sides: 3
+                shapes: 4
+                radius: 28
+                radiusTo: 28
+                triLength: 120
+                triLengthTo: 120
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 180
+                haloRotation: 0
+                haloRotateSpeed: 1
+                layer: 110
+            }
+            {
+                type: HaloPart
+                progress: warmup
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: FFF589
+                colorTo: FFF589
+                sides: 3
+                shapes: 4
+                radius: 28
+                radiusTo: 28
+                triLength: 28
+                triLengthTo: 28
+                rotateSpeed: 0
+                shapeRotation: 180
+                haloRadius: 180
+                haloRotation: 0
+                haloRotateSpeed: 1
+                layer: 110
+            }
+            {
+                type: HaloPart
+                progress: warmup
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: 000000
+                colorTo: 000000
+                sides: 3
+                shapes: 4
+                radius: 14
+                radiusTo: 14
+                triLength: 60
+                triLengthTo: 60
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 180
+                haloRotation: 0
+                haloRotateSpeed: 1
+                layer: 110
+            }
+            {
+                type: HaloPart
+                progress: warmup
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: 000000
+                colorTo: 000000
+                sides: 3
+                shapes: 4
+                radius: 14
+                radiusTo: 14
+                triLength: 14
+                triLengthTo: 14
+                rotateSpeed: 0
+                shapeRotation: 180
+                haloRadius: 180
+                haloRotation: 0
+                haloRotateSpeed: 1
+                layer: 110
+            }
+            //
+            //
+            //
+            //
+            {
+                type: HaloPart
+                progress: {
+                    type: warmup
+                    op: compress
+                    start: 0
+                    end: 0.33
+                }
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: FFF589
+                colorTo: FFF589
+                sides: 3
+                shapes: 4
+                radius: 96
+                radiusTo: 96
+                triLength: 0
+                triLengthTo: 48
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 325
+                haloRadiusTo: 180
+                haloRotation: 45
+                haloRotateSpeed: 0
+                layer: 110
+            }
+            {
+                type: HaloPart
+                progress: {
+                    type: warmup
+                    op: compress
+                    start: 0
+                    end: 0.33
+                }
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: 000000
+                colorTo: 000000
+                sides: 3
+                shapes: 4
+                radius: 48
+                radiusTo: 48
+                triLength: 0
+                triLengthTo: 24
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 325
+                haloRadiusTo: 180
+                haloRotation: 45
+                haloRotateSpeed: 0
+                layer: 110
+            }
+            //
+            {
+                type: HaloPart
+                progress: {
+                    type: warmup
+                    op: compress
+                    start: 0.33
+                    end: 0.66
+                }
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: FFF589
+                colorTo: FFF589
+                sides: 3
+                shapes: 4
+                radius: 80
+                radiusTo: 80
+                triLength: 0
+                triLengthTo: 40
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 375
+                haloRadiusTo: 230
+                haloRotation: 45
+                haloRotateSpeed: 0
+                layer: 110
+            }
+            {
+                type: HaloPart
+                progress: {
+                    type: warmup
+                    op: compress
+                    start: 0.33
+                    end: 0.66
+                }
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: 000000
+                colorTo: 000000
+                sides: 3
+                shapes: 4
+                radius: 40
+                radiusTo: 40
+                triLength: 0
+                triLengthTo: 20
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 375
+                haloRadiusTo: 230
+                haloRotation: 45
+                haloRotateSpeed: 0
+                layer: 110
+            }
+            //
+            {
+                type: HaloPart
+                progress: {
+                    type: warmup
+                    op: compress
+                    start: 0.66
+                    end: 1
+                }
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: FFF589
+                colorTo: FFF589
+                sides: 3
+                shapes: 4
+                radius: 64
+                radiusTo: 64
+                triLength: 0
+                triLengthTo: 32
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 425
+                haloRadiusTo: 280
+                haloRotation: 45
+                haloRotateSpeed: 0
+                layer: 110
+            }
+            {
+                type: HaloPart
+                progress: {
+                    type: warmup
+                    op: compress
+                    start: 0.66
+                    end: 1
+                }
+                x: 0
+                y: 0
+                tri: true
+                hollow: false
+                color: 000000
+                colorTo: 000000
+                sides: 3
+                shapes: 4
+                radius: 32
+                radiusTo: 32
+                triLength: 0
+                triLengthTo: 16
+                rotateSpeed: 0
+                shapeRotation: 0
+                haloRadius: 425
+                haloRadiusTo: 280
+                haloRotation: 45
+                haloRotateSpeed: 0
+                layer: 110
+            }
+            //
+            //
+        ]
+    }
+]

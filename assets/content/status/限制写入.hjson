@@ -1,0 +1,20 @@
+name: 限制写入
+description: "#####"
+color: FFFFFF
+speedMultiplier: 0.4
+reloadMultiplier: 0
+dragMultiplier: 325
+effectChance: 0.03
+effect: {
+    particles: 5
+    region: ice-peak-triangle
+    lifetime: 60
+    length: 64
+    baseLength: 60
+    offset: 90
+    spin: 1.2
+    sizeFrom: 6
+    sizeTo: 0
+    colorFrom: FFFFFF
+    colorTo: E6CECEFF
+}
