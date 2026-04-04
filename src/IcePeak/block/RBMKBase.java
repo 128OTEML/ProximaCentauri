@@ -5,6 +5,7 @@ import arc.*;
 import arc.graphics.*;
 import arc.graphics.g2d.*;
 import arc.math.*;
+import arc.math.geom.*;
 import arc.struct.*;
 import arc.util.*;
 import arc.util.io.*;
@@ -42,6 +43,10 @@ public class RBMKBase extends PowerGenerator{
     public TextureRegion liquidRegion;
     public TextureRegion topRegion;
     public TextureRegion bottomRegion;
+    
+    public TextureRegion debrisRegion1;
+    public TextureRegion debrisRegion2;
+    public TextureRegion debrisRegion3;
     
     public RBMKBase(String name){
         super(name);
@@ -111,11 +116,15 @@ public class RBMKBase extends PowerGenerator{
         liquidRegion = Core.atlas.find(name + "-liquid");
         topRegion = Core.atlas.find(name + "-top");
         bottomRegion = Core.atlas.find(name + "-bottom");
+        
+        debrisRegion1 = Core.atlas.find(name + "-debris-1");
+        debrisRegion2 = Core.atlas.find(name + "-debris-2");
+        debrisRegion3 = Core.atlas.find(name + "-debris-3");
     }
 
     @Override
     public TextureRegion[] icons(){
-        return new TextureRegion[]{bottomRegion, topRegion};
+        return new TextureRegion[]{topRegion};
     }
 
     public static void drawTiledFrames(int size, float x, float y, float padding, Liquid liquid, float alpha){
@@ -360,6 +369,139 @@ public class RBMKBase extends PowerGenerator{
                 Draw.blend();
                 Draw.color();
             }
+        }
+
+        @Override
+        public void onDestroyed(){
+            super.onDestroyed();
+            
+            // 创建四向飞溅的爆炸碎片效果
+            createExplosionDebris();
+        }
+        
+        /**
+         * 创建爆炸碎片效果
+         * 多向飞溅的碎片，使用贴图
+         */
+        public void createExplosionDebris(){
+            // 创建1个碎片
+            for(int i = 0; i < 1; i++){
+                // 随机角度
+                float angle = Mathf.random(360f);
+                float velocity = 1.5f + Mathf.random(4f);
+                
+                // 计算碎片飞行方向
+                Vec2 velocityVec = Tmp.v1.trns(angle, velocity);
+                
+                // 创建碎片贴图类型
+                int debrisType = Mathf.random(3); // 0-3 四种碎片类型
+                
+                // 使用Effect创建碎片飞溅效果
+                Fx.dynamicExplosion.at(x, y, size, Pal.gray, velocityVec);
+                
+                // 创建自定义碎片效果（使用贴图）
+                createDebrisEffect(x, y, velocityVec, debrisType);
+            }
+            
+            // 中心爆炸效果
+            Fx.explosion.at(x, y, size);
+            
+            // 在爆炸位置着火
+            Fx.fire.at(x, y, size);
+            
+            // 生成岩浆效果
+            Effect magmaEffect = new Effect(240f, e -> {
+                Draw.color(Color.orange, Color.red, e.fin());
+                Draw.alpha(0.8f * (1f - e.fin()));
+                Draw.rect(Core.atlas.find("circle"), e.x, e.y, size * tilesize * 2f * (1f + e.fin()));
+            });
+            magmaEffect.at(x, y);
+            
+            // 根据热量添加额外的爆炸效果
+            if(heat > 500f){
+                Fx.fireballsmoke.at(x, y);
+                Fx.blastsmoke.at(x, y);
+            }
+        }
+        
+        /**
+         * 创建单个碎片效果
+         * @param startX 起始X坐标
+         * @param startY 起始Y坐标
+         * @param velocity 速度向量
+         * @param type 碎片类型 (0-3)
+         */
+        public void createDebrisEffect(float startX, float startY, Vec2 velocity, int type){
+            // 随机选择周围16格内的目标位置
+            float targetX = startX + Mathf.range(16f) * tilesize;
+            float targetY = startY + Mathf.range(16f) * tilesize;
+            
+            // 计算飞行时间（基于距离）
+            float distance = Mathf.dst(startX, startY, targetX, targetY);
+            float flyTime = Mathf.clamp(distance / (tilesize * 72f), 0.5f, 2f); // 飞行时间0.5-2秒
+            
+            // 总时间：飞行时间 + 32秒停留
+            float totalTime = flyTime + 32f;
+            
+            // 生成随机停止角度（只生成一次）
+            float stopRotation = Mathf.random(360f);
+            
+            // 随机选择碎片贴图（只选择一次）
+            TextureRegion[] debrisRegions = {debrisRegion1, debrisRegion2, debrisRegion3};
+            TextureRegion region = debrisRegions[(int)(Math.abs(Mathf.random()) % debrisRegions.length)];
+            
+            // 如果贴图不存在，使用白色方块作为fallback
+            if(region == null || region == Core.atlas.find("error")){
+                region = Core.atlas.find("white");
+            }
+            
+            // 使用final变量在lambda中引用
+            final TextureRegion finalRegion = region;
+            final float finalTargetX = targetX;
+            final float finalTargetY = targetY;
+            final float finalStartX = startX;
+            final float finalStartY = startY;
+            final float finalFlyTime = flyTime;
+            final float finalStopRotation = stopRotation;
+            final int finalType = type;
+            
+            // 创建碎片渲染效果
+            Effect debrisEffect = new Effect(totalTime * 60f, e -> {
+                // 碎片颜色根据类型变化
+                Color debrisColor = finalType == 0 ? Pal.darkMetal : finalType == 1 ? Pal.gray : finalType == 2 ? Color.darkGray : Color.lightGray;
+                Draw.color(debrisColor);
+                
+                // 碎片大小
+                float debrisSize = (2f + (finalType % 2)) * 8f;
+                
+                // 计算碎片位置（直线飞行）
+                float time = e.time / 60f; // 转换为秒
+                float px, py;
+                float rotation;
+                
+                if(time < finalFlyTime){
+                    // 飞行阶段：从起点飞向目标
+                    float progress = time / finalFlyTime;
+                    px = finalStartX + (finalTargetX - finalStartX) * progress;
+                    py = finalStartY + (finalTargetY - finalStartY) * progress;
+                    rotation = e.fin() * 360f * (finalType + 1) * 2f; // 飞行时快速旋转
+                }else{
+                    // 停留阶段：停在目标位置，使用固定的随机角度
+                    px = finalTargetX;
+                    py = finalTargetY;
+                    rotation = finalStopRotation; // 使用预先生成的随机角度
+                }
+                
+                // 绘制碎片（使用贴图）
+                Draw.z(Layer.effect);
+                
+                // 绘制碎片贴图
+                Draw.rect(finalRegion, px, py, debrisSize, debrisSize, rotation);
+                
+                Draw.color();
+            });
+            
+            debrisEffect.at(startX, startY);
         }
 
         @Override

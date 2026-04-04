@@ -71,10 +71,10 @@ public class RBMKCooler extends RBMKBase{
             // 基础冷却效果
             heat = Mathf.clamp(heat - coolingPower * coolingEfficiency * delta(), 25f, maxHeat);
             
-            // 检测到结构内存在cryofluid液体时，如果温度大于800则以40/t的速度消耗热量，并以120/s消耗液体
+            // 检测到结构内存在cryofluid液体时，如果温度大于800则以150/t的速度消耗热量，并以120/s消耗液体
             if(liquids != null && liquids.current() == Liquids.cryofluid && liquids.currentAmount() > 0.1f){
                 if(heat > 800f){
-                    float cryofluidCooling = 80f * delta();
+                    float cryofluidCooling = 150f * delta();
                     heat = Mathf.clamp(heat - cryofluidCooling, 25f, maxHeat);
                     
                     // 消耗液体
