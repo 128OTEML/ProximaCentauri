@@ -1,9 +1,0 @@
-color: 00ACFFFF
-name: DFC暗聚变反应堆接收能量
-gas: true
-hidden: true
-hideDetails: false
-temperature: 32
-heatCapacity: 0
-coolant: false
-incinerable: false

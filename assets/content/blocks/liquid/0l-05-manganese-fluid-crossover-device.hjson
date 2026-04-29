@@ -1,9 +1,0 @@
-type: LiquidJunction
-solid: false
-category: liquid
-squareSprite: false
-research: 0l-06-manganese-fluid-router
-requirements: [
-  0a-06-manganese/8
-]
-researchCostMultiplier: 0.5

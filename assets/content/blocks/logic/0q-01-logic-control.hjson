@@ -1,9 +1,0 @@
-type: SwitchBlock
-size: 1
-category: logic
-research: 0q-00-logic-chip
-requirements: [
-  0a-10-iron/10
-  0a-06-manganese/10
-]
-researchCostMultiplier: 0.5

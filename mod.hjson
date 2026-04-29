@@ -1,30 +1,23 @@
 #the mod name as displayed in-game
-displayName: "Ice Peak"
+displayName: "Proxima Centauri"
 
 #the internal name of your mod
-name: "ice-peak"
+name: "proxima"
 
 #your name
-author: "神秘"
+author: "128_OTEML"
+
+#the fully qualified main class of the mod
+main: "Proxima.ProximaCentauriMod"
 
 #the mod description as seen in the mod dialog
-description: "
-始源于冰雪的MOD
-MOD所有者:aaenaaoaaena
-MOD贴图:A.E.、不萌萌的锰新：)
-MOD代码:128_OTEML、A.E.
-MOD地图:aaenaaoaaena、ph0se-fa6r1c"
+description: "A Mindustry Java mod."
 
 #the mod version
 version: 1.0
 
-#the fully qualified main class of the mod
-main: "IcePeak.FlameOut"
-
 #the minimum game build required to run this mod
-minGameVersion: 156
+minGameVersion: 157.4
 
 #this is a java mod
 java: true
-
-

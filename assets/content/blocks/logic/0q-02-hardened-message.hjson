@@ -1,7 +1,0 @@
-type: MessageBlock
-size: 1
-requirements: [
-  0a-10-iron/10
-]
-category: logic
-research: 0q-01-logic-control

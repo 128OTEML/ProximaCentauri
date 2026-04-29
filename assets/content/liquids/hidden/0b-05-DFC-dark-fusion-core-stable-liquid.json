@@ -1,9 +1,0 @@
-color: FFFFFFFF
-name: DFC暗聚变反应堆稳定液
-gas: false
-hidden: true
-hideDetails: false
-temperature: -12.5
-heatCapacity: 0
-coolant: false
-incinerable: false
