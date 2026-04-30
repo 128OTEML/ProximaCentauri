@@ -1,6 +1,7 @@
 package Proxima.items;
 
 import arc.graphics.*;
+import arc.struct.*;
 import mindustry.content.*;
 import mindustry.type.*;
 
@@ -8,6 +9,10 @@ import mindustry.type.*;
  * Proxima物品注册
  */
 public class ProximaItems{
+    public static Item iron, uranium, manganese, quartz;
+    
+    public static final Seq<Item> proximaOreItems = new Seq<>();
+    
     public static Item plutonium238BerylliumSource; // 钚238-铍中子源
     public static Item heu235UraniumFuel; // HEU-235铀燃料棒
     
@@ -22,6 +27,31 @@ public class ProximaItems{
 
     
     public static void load(){
+        iron = new Item("iron", Color.valueOf("a8a8a8")){{
+            hardness = 2;
+            cost = 0.8f;
+        }};
+        
+        uranium = new Item("uranium", Color.valueOf("7fff00")){{
+            hardness = 5;
+            cost = 1.5f;
+            radioactivity = 1.2f;
+            explosiveness = 0.3f;
+            healthScaling = 0.15f;
+        }};
+        
+        manganese = new Item("manganese", Color.valueOf("555555")){{
+            hardness = 4;
+            cost = 1.3f;
+            healthScaling = 0.7f;
+        }};
+        
+        quartz = new Item("quartz", Color.valueOf("f0f0f0")){{
+            cost = 0.9f;
+        }};
+        
+        proximaOreItems.addAll(iron, uranium, manganese, quartz);
+        
         // 钚238-铍中子源 - 深蓝色带放射性
         plutonium238BerylliumSource = new RBMKRodItem("plutonium238-beryllium-source", new Color(0.2f, 0.3f, 0.8f)){{
             yield = 0.8f;

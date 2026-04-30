@@ -1,10 +1,17 @@
 package Proxima.block;
 
+import arc.struct.*;
 import mindustry.content.*;
 import mindustry.type.*;
 import mindustry.world.*;
+import mindustry.world.blocks.environment.*;
+import Proxima.items.*;
 
 public class ProximaBlocks{
+    public static Block oreIron, oreUranium, oreManganese, oreQuartz;
+    
+    public static final Seq<Block> proximaOres = new Seq<>();
+    
     public static Block largeHeatPipe;
     
     // RBMK反应堆方块
@@ -47,6 +54,24 @@ public class ProximaBlocks{
 
 
     public static void load(){
+        oreIron = new OreBlock(ProximaItems.iron){{
+            variants = 3;
+        }};
+        
+        oreUranium = new OreBlock(ProximaItems.uranium){{
+            variants = 3;
+        }};
+        
+        oreManganese = new OreBlock(ProximaItems.manganese){{
+            variants = 3;
+        }};
+        
+        oreQuartz = new OreBlock(ProximaItems.quartz){{
+            variants = 3;
+        }};
+        
+        proximaOres.addAll(oreIron, oreUranium, oreManganese, oreQuartz);
+        
         largeHeatPipe = new LargeHeatPipe("large-heat-pipe"){{
             requirements(Category.crafting, ItemStack.with(
                 Items.copper, 50,

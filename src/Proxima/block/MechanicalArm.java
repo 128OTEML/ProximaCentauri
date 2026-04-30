@@ -24,12 +24,21 @@ import mindustry.world.blocks.*;
 import mindustry.world.blocks.storage.*;
 import mindustry.world.meta.*;
 
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.DataOutputStream;
+import java.io.DataInputStream;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
+
 import static mindustry.Vars.*;
 
 /**
  * 机械臂方块
- * 继承自RoboticArmBase，实现与Create模组机械臂相同的功能
- * 只需要电力即可工作，支持物品的提取和放置
+ * 继承RoboticArmBase，(其实可以不要)
+ * 只需要电力即可工作
+ * 多人游戏有机械臂数据被删的问题
+ * UI需要汉化
  */
 public class MechanicalArm extends RoboticArmBase {
     public static final float range = 12f * tilesize;
@@ -48,7 +57,7 @@ public class MechanicalArm extends RoboticArmBase {
         solid = true;
         hasItems = true;
         configurable = true;
-        saveConfig = false;
+        saveConfig = true;
         itemCapacity = 10;
         noUpdateDisabled = true;
         consumePower(1f);
@@ -59,6 +68,14 @@ public class MechanicalArm extends RoboticArmBase {
             Items.titanium, 50,
             Items.silicon, 25
         ));
+        
+        config(byte[].class, (MechanicalArmBuild build, byte[] data) -> {
+            build.readConfig(data);
+        });
+        
+        config(Integer.class, (MechanicalArmBuild build, Integer pos) -> {
+            build.setOneLink(pos);
+        });
     }
     
     @Override
@@ -90,7 +107,6 @@ public class MechanicalArm extends RoboticArmBase {
     public class MechanicalArmBuild extends RoboticArmBuild {
         public Seq<Integer> inputs = new Seq<>();
         public Seq<Integer> outputs = new Seq<>();
-        public Seq<Integer> deadLinks = new Seq<>();
         public ObjectMap<Integer, Boolean> linkModes = new ObjectMap<>(); // true为提取模式，false为推送模式
         public ObjectMap<Integer, Integer> clickCounts = new ObjectMap<>();
         public ObjectMap<Integer, Seq<Item>> linkItemFilters = new ObjectMap<>();
@@ -108,12 +124,12 @@ public class MechanicalArm extends RoboticArmBase {
         public static final int FRAME_DELAY = 5;
         
         public int loopIndex = 0;
-        // Phase: 0=IDLE(空闲), 1=MOVE_TO_INPUT(移动到输入), 2=EXTRACT(提取), 3=MOVE_TO_OUTPUT(移动到输出), 4=DEPOSIT(放置)
+        // Phase: 0=(空闲), 1=(移动到输入), 2=(提取), 3=(移动到输出), 4=(放置)
         public int phase = 0;
         public int currentInputIndex = -1;
         public int currentOutputIndex = -1;
         public float progress = 0f; // 0到1的进度
-        public float phaseTime = 0f; // 每个阶段的时间（防止卡死）
+        public float phaseTime = 0f; // 每个阶段的时间
         public int itemTransferAmount = 1; // 单次抓取的物品量，默认为1
         public ItemStack heldItem = new ItemStack();
         public Building currentTarget = null; // 当前目标方块
@@ -124,15 +140,6 @@ public class MechanicalArm extends RoboticArmBase {
         
         public void setInputs(Seq<Integer> v) {
             inputs = v;
-            for (int i = inputs.size - 1; i >= 0; i--) {
-                int link = inputs.get(i);
-                Building linkTarget = world.build(link);
-                if (!linkValidTarget(this, linkTarget)) {
-                    inputs.remove(i);
-                } else {
-                    inputs.set(i, linkTarget.pos());
-                }
-            }
         }
         
         public Seq<Integer> getOutputs() {
@@ -141,15 +148,6 @@ public class MechanicalArm extends RoboticArmBase {
         
         public void setOutputs(Seq<Integer> v) {
             outputs = v;
-            for (int i = outputs.size - 1; i >= 0; i--) {
-                int link = outputs.get(i);
-                Building linkTarget = world.build(link);
-                if (!linkValidTarget(this, linkTarget)) {
-                    outputs.remove(i);
-                } else {
-                    outputs.set(i, linkTarget.pos());
-                }
-            }
         }
         
         public void setOneLink(int v) {
@@ -157,63 +155,27 @@ public class MechanicalArm extends RoboticArmBase {
             if (linkTarget == null) return;
             
             boolean isInput = linkModes.get(v, false);
-            if (isInput) {
-                int inputIndex = inputs.indexOf(v);
-                if (inputIndex >= 0) {
-                    // 从输入列表移除，添加到输出列表
-                    inputs.remove(inputIndex);
-                    outputs.add(v);
-                    linkModes.put(v, false);
-                    clickCounts.put(v, 0);
-                } else {
-                    inputs.add(v);
-                    linkModes.put(v, true);
-                    clickCounts.put(v, 1);
-                    linkItemFilters.put(v, new Seq<>());
-                }
-            } else {
-                int outputIndex = outputs.indexOf(v);
-                if (outputIndex >= 0) {
-                    // 从输出列表移除，添加到输入列表
-                    outputs.remove(outputIndex);
-                    inputs.add(v);
-                    linkModes.put(v, true);
-                    clickCounts.put(v, 1);
-                    linkItemFilters.put(v, new Seq<>());
-                } else {
-                    outputs.add(v);
-                    linkModes.put(v, false);
-                    clickCounts.put(v, 0);
-                    linkItemFilters.put(v, new Seq<>());
-                }
-            }
-        }
-        
-        public void deadLink(int v) {
-            if (net.client()) return;
             int inputIndex = inputs.indexOf(v);
             int outputIndex = outputs.indexOf(v);
+            
             if (inputIndex >= 0) {
+                // 在输入列表中，第二次点击：从输入列表移除，添加到输出列表
                 inputs.remove(inputIndex);
+                outputs.add(v);
+                linkModes.put(v, false);
+                clickCounts.put(v, 0);
             } else if (outputIndex >= 0) {
+                // 在输出列表中，第三次点击：删除链接
                 outputs.remove(outputIndex);
-            }
-            deadLinks.add(v);
-            linkModes.remove(v);
-            clickCounts.remove(v);
-            linkItemFilters.remove(v);
-            if (deadLinks.size >= 50) {
-                deadLinks.removeRange(0, 25);
-            }
-        }
-        
-        public void tryResumeDeadLink(int v) {
-            if (net.client()) return;
-            if (!deadLinks.contains(v)) return;
-            deadLinks.remove(v);
-            Building linkTarget = world.build(v);
-            if (linkValid(this, v)) {
-                configure(linkTarget.pos());
+                linkModes.remove(v);
+                clickCounts.remove(v);
+                linkItemFilters.remove(v);
+            } else {
+                // 不在任何列表中，第一次点击：添加到输入列表
+                inputs.add(v);
+                linkModes.put(v, true);
+                clickCounts.put(v, 1);
+                linkItemFilters.put(v, new Seq<>());
             }
         }
         
@@ -232,7 +194,7 @@ public class MechanicalArm extends RoboticArmBase {
             if (heldItem.item != null && heldItem.amount > 0) return false;
             if (target.items == null) return false;
             
-            // 确保currentInputIndex在有效范围内
+            // 保证currentInputIndex在有效范围内
             if (currentInputIndex < 0 || currentInputIndex >= inputs.size) {
                 return false;
             }
@@ -245,7 +207,7 @@ public class MechanicalArm extends RoboticArmBase {
                 for (Item item : content.items()) {
                     int count = target.items.get(item);
                     if (count > 0) {
-                        int accept = Math.min(count, 1); // 每次只抓取1个物品
+                        int accept = Math.min(count, itemTransferAmount);
                         if (accept > 0) {
                             heldItem = new ItemStack(item, accept);
                             target.removeStack(item, accept);
@@ -258,7 +220,7 @@ public class MechanicalArm extends RoboticArmBase {
                 for (Item item : filter) {
                     int count = target.items.get(item);
                     if (count > 0) {
-                        int accept = Math.min(count, 1); // 每次只抓取1个物品
+                        int accept = Math.min(count, itemTransferAmount);
                         if (accept > 0) {
                             heldItem = new ItemStack(item, accept);
                             target.removeStack(item, accept);
@@ -276,8 +238,7 @@ public class MechanicalArm extends RoboticArmBase {
             
             int accept = target.acceptStack(heldItem.item, heldItem.amount, this);
             if (accept > 0) {
-                // 每次只放置1个物品
-                int depositAmount = Math.min(accept, 1);
+                int depositAmount = Math.min(accept, heldItem.amount);
                 target.handleStack(heldItem.item, depositAmount, this);
                 heldItem = new ItemStack();
                 return true;
@@ -317,11 +278,6 @@ public class MechanicalArm extends RoboticArmBase {
                     currentOutputIndex = -1;
                     progress = 0f;
                     phaseTime = 0f;
-                    if (timer.get(4, 60)) Log.info("Phase timeout: resetting to IDLE");
-                }
-                
-                if (timer.get(3, 60)) {
-                    Log.info("updateTile: phase=" + phase + " currentTarget=" + (currentTarget != null ? "(" + (int)currentTarget.x + "," + (int)currentTarget.y + ")" : "null") + " inputs.size=" + inputs.size + " outputs.size=" + outputs.size + " phaseTime=" + String.format("%.1f", phaseTime));
                 }
                 
                 switch (phase) {
@@ -329,35 +285,30 @@ public class MechanicalArm extends RoboticArmBase {
                         if (searchInput()) {
                             phase = 1; // 找到输入，开始移动
                             phaseTime = 0f; // 重置阶段时间
-                            if (timer.get(4, 60)) Log.info("Transition: 0 -> 1, currentTarget set");
                         }
                         break;
                     case 1: // MOVE_TO_INPUT - 移动到输入
                         if (moveToTarget()) {
                             phase = 2; // 到达目标，开始提取
                             phaseTime = 0f; // 重置阶段时间
-                            if (timer.get(4, 60)) Log.info("Transition: 1 -> 2");
                         }
                         break;
                     case 2: // EXTRACT - 提取物品
                         if (extract()) {
                             phase = 3; // 提取成功，搜索输出
                             phaseTime = 0f; // 重置阶段时间
-                            if (timer.get(4, 60)) Log.info("Transition: 2 -> 3");
                         }
                         break;
                     case 3: // 搜索输出
                         if (searchOutput()) {
                             phase = 4; // 找到输出，开始移动
                             phaseTime = 0f; // 重置阶段时间
-                            if (timer.get(4, 60)) Log.info("Transition: 3 -> 4, currentTarget set");
                         }
                         break;
                     case 4: // MOVE_TO_OUTPUT - 移动到输出
                         if (moveToTarget()) {
                             phase = 5; // 到达目标，开始放置
                             phaseTime = 0f; // 重置阶段时间
-                            if (timer.get(4, 60)) Log.info("Transition: 4 -> 5");
                         }
                         break;
                     case 5: // DEPOSIT - 放置物品
@@ -365,7 +316,6 @@ public class MechanicalArm extends RoboticArmBase {
                             phase = 0; // 放置成功，回到空闲
                             itemSent = true;
                             phaseTime = 0f; // 重置阶段时间
-                            if (timer.get(4, 60)) Log.info("Transition: 5 -> 0");
                         }
                         break;
                 }
@@ -380,7 +330,6 @@ public class MechanicalArm extends RoboticArmBase {
         
         public boolean searchInput() {
             if (inputs.isEmpty()) {
-                if (timer.get(5, 60)) Log.info("searchInput: inputs is empty");
                 return false;
             }
             
@@ -391,7 +340,6 @@ public class MechanicalArm extends RoboticArmBase {
             while (searchCount < maxSearches) {
                 // 确保loopIndex在有效范围内
                 if (inputs.isEmpty()) {
-                    if (timer.get(5, 60)) Log.info("searchInput: inputs became empty during search");
                     return false;
                 }
                 
@@ -408,8 +356,6 @@ public class MechanicalArm extends RoboticArmBase {
                 int pos = inputs.get(index);
                 Building linkTarget = world.build(pos);
                 if (!linkValidTarget(this, linkTarget)) {
-                    deadLink(pos);
-                    if (timer.get(5, 60)) Log.info("searchInput: deadLink pos=" + pos);
                     searchCount++;
                     continue;
                 }
@@ -423,7 +369,6 @@ public class MechanicalArm extends RoboticArmBase {
                                 currentInputIndex = index;
                                 currentTarget = linkTarget;
                                 progress = 0f;
-                                if (timer.get(5, 60)) Log.info("searchInput: FOUND item=" + item.name + " at pos=" + pos + " (" + (int)linkTarget.x + "," + (int)linkTarget.y + ")");
                                 return true;
                             }
                         }
@@ -433,7 +378,6 @@ public class MechanicalArm extends RoboticArmBase {
                                 currentInputIndex = index;
                                 currentTarget = linkTarget;
                                 progress = 0f;
-                                if (timer.get(5, 60)) Log.info("searchInput: FOUND item=" + item.name + " at pos=" + pos + " (" + (int)linkTarget.x + "," + (int)linkTarget.y + ")");
                                 return true;
                             }
                         }
@@ -441,13 +385,11 @@ public class MechanicalArm extends RoboticArmBase {
                 }
                 searchCount++;
             }
-            if (timer.get(5, 60)) Log.info("searchInput: no items found after " + searchCount + " searches");
             return false;
         }
         
         public boolean searchOutput() {
             if (outputs.isEmpty() || heldItem.item == null || heldItem.amount <= 0) {
-                if (timer.get(5, 60)) Log.info("searchOutput: outputs empty or no held item");
                 return false;
             }
             
@@ -458,7 +400,6 @@ public class MechanicalArm extends RoboticArmBase {
             while (searchCount < maxSearches) {
                 // 确保loopIndex在有效范围内
                 if (outputs.isEmpty()) {
-                    if (timer.get(5, 60)) Log.info("searchOutput: outputs became empty during search");
                     return false;
                 }
                 
@@ -475,8 +416,6 @@ public class MechanicalArm extends RoboticArmBase {
                 int pos = outputs.get(index);
                 Building linkTarget = world.build(pos);
                 if (!linkValidTarget(this, linkTarget)) {
-                    deadLink(pos);
-                    if (timer.get(5, 60)) Log.info("searchOutput: deadLink pos=" + pos);
                     searchCount++;
                     continue;
                 }
@@ -485,7 +424,6 @@ public class MechanicalArm extends RoboticArmBase {
                     Seq<Item> filter = linkItemFilters.get(pos, new Seq<>());
                     
                     if (!filter.isEmpty() && !filter.contains(heldItem.item)) {
-                        if (timer.get(5, 60)) Log.info("searchOutput: held item not in filter");
                         searchCount++;
                         continue;
                     }
@@ -493,12 +431,10 @@ public class MechanicalArm extends RoboticArmBase {
                     currentOutputIndex = index;
                     currentTarget = linkTarget;
                     progress = 0f;
-                    if (timer.get(5, 60)) Log.info("searchOutput: FOUND output at pos=" + pos + " (" + (int)linkTarget.x + "," + (int)linkTarget.y + ")");
                     return true;
                 }
                 searchCount++;
             }
-            if (timer.get(5, 60)) Log.info("searchOutput: no outputs found after " + searchCount + " searches");
             return false;
         }
         
@@ -513,7 +449,6 @@ public class MechanicalArm extends RoboticArmBase {
                 phase = 0;
                 progress = 0f;
                 phaseTime = 0f; // 重置阶段时间
-                if (timer.get(4, 60)) Log.info("moveToTarget: target block is null, returning to IDLE");
                 return false;
             }
 
@@ -537,7 +472,6 @@ public class MechanicalArm extends RoboticArmBase {
                 phase = 0;
                 progress = 0f;
                 phaseTime = 0f; // 重置阶段时间
-                if (timer.get(4, 60)) Log.info("extract: target block is null, returning to IDLE");
                 return false;
             }
             
@@ -548,7 +482,6 @@ public class MechanicalArm extends RoboticArmBase {
                 phase = 0;
                 progress = 0f;
                 phaseTime = 0f; // 重置阶段时间
-                if (timer.get(4, 60)) Log.info("extract: invalid currentInputIndex, returning to IDLE");
                 return false;
             }
             
@@ -574,7 +507,6 @@ public class MechanicalArm extends RoboticArmBase {
                 phase = 0;
                 progress = 0f;
                 phaseTime = 0f; // 重置阶段时间
-                if (timer.get(4, 60)) Log.info("deposit: target block is null, returning to IDLE");
                 return false;
             }
             
@@ -587,7 +519,6 @@ public class MechanicalArm extends RoboticArmBase {
                 phase = 0;
                 progress = 0f;
                 phaseTime = 0f; // 重置阶段时间
-                if (timer.get(4, 60)) Log.info("deposit: cannot accept items, returning to IDLE");
                 return false;
             }
             
@@ -635,11 +566,14 @@ public class MechanicalArm extends RoboticArmBase {
         @Override
         public void draw() {
             super.draw();
+
+            // Draw.alpha(warmup);
             
-            Draw.alpha(warmup);
-            
-            // 绘制底座
+            // 绘制底座 - 保持在建筑层
             Draw.rect(baseRegion, x, y);
+            
+            // 将绘制图层提升到建筑覆盖层（高于建筑，低于单位）
+            Draw.z(Layer.blockOver);
             
             // 计算机械臂各部分的位置和角度
             float baseX = x;
@@ -648,9 +582,9 @@ public class MechanicalArm extends RoboticArmBase {
             // 目标角度
             float targetBaseAngle = getTargetAngle();
             
-            // 底座旋转 - 使用Angles.moveToward，像炮塔一样平滑旋转
-            float rotateSpeed = 6f; // 旋转速度，降低以提高平滑度
-            // 使用最短路线旋转（转换为度数处理）
+            // 底座旋转
+            float rotateSpeed = 6f; // 旋转速度
+            // 最短路线旋转
             float currentDegrees = baseAngle * Mathf.radiansToDegrees;
             float targetDegrees = targetBaseAngle * Mathf.radiansToDegrees;
             float newDegrees = Angles.moveToward(currentDegrees, targetDegrees, rotateSpeed);
@@ -667,7 +601,7 @@ public class MechanicalArm extends RoboticArmBase {
                 float targetCenterX = currentTarget.x;
                 float targetCenterY = currentTarget.y;
                 
-                // 绘制一条隐形的线（透明度为0）（调试）
+                // 绘制一条隐形的线（透明度为0）（调试，可以删掉）
                 Draw.alpha(0);
                 Lines.stroke(1);
                 Lines.line(armCenterX, armCenterY, targetCenterX, targetCenterY);
@@ -756,76 +690,74 @@ public class MechanicalArm extends RoboticArmBase {
             float upperArmThickness = upperArmRegion.height * 0.12f;
             Draw.rect(upperArmRegion, upperArmMidX, upperArmMidY, upperArmLength, upperArmThickness, upperArmTotalAngle * Mathf.radiansToDegrees);
             
-            // 爪子角度 - 根据phase和progress决定
+            // 爪子角度 - 根据 phase 和 progress 决定
             // phase 0: 空闲 - 根据是否持有物品决定
-            // phase 1: 移动到输入 - 张开
-            // phase 2: 提取物品 - 到达后闭合抓取
+            // phase 1: 移动到输入 - 保持张开状态
+            // phase 2: 提取物品 - 到达后闭合抓取（在方块上完成）
             // phase 3: 搜索输出 - 闭合（持有物品）
             // phase 4: 移动到输出 - 闭合（持有物品）
-            // phase 5: 放置物品 - 到达后张开释放
+            // phase 5: 放置物品 - 到达后张开释放（在方块上完成）
             float targetClawAngle;
             if (phase == 0) {
                 // 空闲状态，根据是否持有物品决定
-                targetClawAngle = (heldItem.item != null && heldItem.amount > 0) ? 0f : 45f * Mathf.degreesToRadians;
+                targetClawAngle = (heldItem.item != null && heldItem.amount > 0) ? 0f : 60f * Mathf.degreesToRadians;
             } else if (phase == 1) {
-                // 移动到输入 - 逐渐闭合，接近目标时完全闭合
-                targetClawAngle = Mathf.lerp(45f, 0f, progress) * Mathf.degreesToRadians;
+                // 移动到输入 - 保持张开状态
+                targetClawAngle = 60f * Mathf.degreesToRadians;
             } else if (phase == 2) {
-                // 提取物品 - 保持闭合状态
-                targetClawAngle = 0f;
+                // 提取物品 - 到达后闭合抓取（在方块上完成闭合动画）
+                // 使用进度的后半部分来触发闭合动画
+                float grabProgress = Mathf.clamp((progress - 0.5f) * 2f); // 只在 progress > 0.5 时开始
+                float easedProgress = Mathf.pow(grabProgress, 2f); // 使用幂函数实现缓入效果
+                targetClawAngle = Mathf.lerp(60f, 0f, easedProgress) * Mathf.degreesToRadians;
             } else if (phase == 3 || phase == 4) {
                 // 搜索输出/移动到输出 - 闭合（持有物品）
                 targetClawAngle = 0f;
             } else if (phase == 5) {
-                // 放置物品 - 逐渐张开，接近目标时完全张开
-                targetClawAngle = Mathf.lerp(0f, 45f, progress) * Mathf.degreesToRadians;
+                // 放置物品 - 到达后张开释放（在方块上完成张开动画）（张开貌似没有实现）
+                // 使用进度的后半部分来触发张开动画
+                float releaseProgress = Mathf.clamp((progress - 0.5f) * 2f); // 只在 progress > 0.5 时开始
+                float easedProgress = 1f - Mathf.pow(1f - releaseProgress, 2f); // 使用幂函数实现缓出效果
+                targetClawAngle = Mathf.lerp(0f, 60f, easedProgress) * Mathf.degreesToRadians;
             } else {
-                targetClawAngle = 45f * Mathf.degreesToRadians;
+                targetClawAngle = 60f * Mathf.degreesToRadians;
             }
-            clawAngle = Angles.moveToward(clawAngle, targetClawAngle, 0.24f);
+            clawAngle = Angles.moveToward(clawAngle, targetClawAngle, 0.3f);
 
-            // 爪子位置 - 在上臂末端，加上爪子长度偏移
-            float clawOffset = 4f; // 爪子长度偏移
-            float clawX = upperArmEndX + Mathf.cos(upperArmTotalAngle) * clawOffset;
-            float clawY = upperArmEndY + Mathf.sin(upperArmTotalAngle) * clawOffset;
-            // 爪子旋转 = 上臂总角度 + 爪子自身角度，转换为度数
+            // 爪子位置 - 在上臂末端前方4像素
+            float clawX = upperArmEndX + Mathf.cos(upperArmTotalAngle) * 4f;
+            float clawY = upperArmEndY + Mathf.sin(upperArmTotalAngle) * 4f;
+            // 爪子基础旋转 = 上臂总角度，转换为度数
             float clawRotation = (upperArmTotalAngle) * Mathf.radiansToDegrees;
             
-            // 根据爪子张合角度计算左右爪子的偏移
-            // 张开角度越大，左右爪子偏移越大
-            float clawSpread = clawAngle / (45f * Mathf.degreesToRadians); // 归一化到0-1
+            // 爪子张合角度（归一化到 0-1）
+            float clawSpread = clawAngle / (60f * Mathf.degreesToRadians);
             
-            // 左爪子和右爪子的位置偏移（垂直于爪子方向）
-            float perpAngle = upperArmTotalAngle + 90f * Mathf.degreesToRadians;
-            float leftClawOffset = 6f * clawSpread; // 左爪子向外偏移
-            float rightClawOffset = 6f * clawSpread; // 右爪子向外偏移
+            // 左爪子：围绕旋转轴逆时针旋转（张开时向上）
+            float leftClawRotation = clawRotation + clawSpread * 30f; // 左爪最大旋转 30 度
             
-            // 左爪子位置
-            float leftClawX = clawX + Mathf.cos(perpAngle) * leftClawOffset;
-            float leftClawY = clawY + Mathf.sin(perpAngle) * leftClawOffset;
+            // 右爪子：围绕旋转轴顺时针旋转（张开时向下）
+            float rightClawRotation = clawRotation - clawSpread * 30f; // 右爪最大旋转 -30 度
             
-            // 右爪子位置
-            float rightClawX = clawX - Mathf.cos(perpAngle) * rightClawOffset;
-            float rightClawY = clawY - Mathf.sin(perpAngle) * rightClawOffset;
-            
-            // 绘制左右爪子
-            Draw.rect(clawLeftRegion, leftClawX, leftClawY, clawRotation);
-            Draw.rect(clawRightRegion, rightClawX, rightClawY, clawRotation);
+            // 绘制左右爪子 - 指定旋转中心
+            float scale = 1f / 4f;
+            Draw.rect(clawLeftRegion, clawX, clawY, clawLeftRegion.width * scale, clawLeftRegion.height * scale, leftClawRotation);
+            Draw.rect(clawRightRegion, clawX, clawY, clawRightRegion.width * scale, clawRightRegion.height * scale, rightClawRotation);
             
             // 绘制持有物品 - 只有在爪子闭合时才显示
             if (heldItem.item != null && heldItem.amount > 0 && clawSpread < 0.3f) {
                 Draw.z(Layer.blockOver + 1);
                 Draw.rect(heldItem.item.uiIcon, clawX, clawY, 8, 8);
-                Draw.z(Layer.block);
             }
             
+            // 恢复图层到建筑层
+            Draw.z(Layer.block);
             Draw.alpha(1);
         }
         
         public float getTargetAngle() {
             // 在所有移动和操作阶段都指向currentTarget
             if (currentTarget != null && (phase == 1 || phase == 2 || phase == 4 || phase == 5)) {
-                // 使用atan2计算弧度角，Mindustry坐标系统中y向上为正
                 // 反转旋转方向：交换x和y的差值顺序
                 float angle = Mathf.atan2(currentTarget.x - x, currentTarget.y - y);
                 // 提取阶段(1,2)减少15度，推送阶段(4,5)减少15度
@@ -834,14 +766,7 @@ public class MechanicalArm extends RoboticArmBase {
                 } else if (phase == 4 || phase == 5) {
                     angle -= 15f * Mathf.degreesToRadians;
                 }
-                if (timer.get(2, 60)) {
-                    Log.info("getTargetAngle: target=(" + (int)currentTarget.x + "," + (int)currentTarget.y +
-                             ") self=(" + (int)x + "," + (int)y + ") angle=" + (angle * Mathf.radiansToDegrees) + "° phase=" + phase);
-                }
                 return angle;
-            }
-            if (timer.get(2, 60)) {
-                Log.info("getTargetAngle: no target or wrong phase, returning baseAngle=" + (baseAngle * Mathf.radiansToDegrees) + "° phase=" + phase + " currentTarget=" + (currentTarget != null ? "set" : "null"));
             }
             return baseAngle;
         }
@@ -876,7 +801,7 @@ public class MechanicalArm extends RoboticArmBase {
                     cont.table(Styles.grayPanel, amountControl -> {
                         amountControl.left().defaults().left();
                         amountControl.add("[accent]Item Transfer Amount:[]").row();
-                        Slider slider = new Slider(1, 5, 1, false);
+                        Slider slider = new Slider(1, 10, 1, false);
                         // 先添加到场景中
                         amountControl.add(slider).growX().row();
                         // 然后设置值和监听器
@@ -903,7 +828,7 @@ public class MechanicalArm extends RoboticArmBase {
                                     currentOutputIndex = -1;
                                     progress = 0f;
                                     phaseTime = 0f;
-                                    if (timer.get(4, 60)) Log.info("itemTransferAmount changed, resetting to IDLE");
+                                    
                                 }
                             }
                         });
@@ -1053,45 +978,7 @@ public class MechanicalArm extends RoboticArmBase {
 
             if (Math.abs(other.x - x) <= range && Math.abs(other.y - y) <= range && other.team == team) {
                 int pos = other.pos();
-                // 检查是否已经连接到这个方块
-                if (inputs.contains(pos) || outputs.contains(pos)) {
-                    // 已连接，增加点击计数
-                    int count = clickCounts.get(pos, 0) + 1;
-                    clickCounts.put(pos, count);
-
-                    if (count == 1) {
-                        // 第一次点击，保持当前模式
-                    } else if (count == 2) {
-                        // 第二次点击，切换模式
-                        // 不调用setOneLink，直接手动切换
-                        boolean isInput = inputs.contains(pos);
-                        if (isInput) {
-                            inputs.remove(inputs.indexOf(pos));
-                            outputs.add(pos);
-                            linkModes.put(pos, false);
-                        } else {
-                            outputs.remove(outputs.indexOf(pos));
-                            inputs.add(pos);
-                            linkModes.put(pos, true);
-                        }
-                    } else if (count >= 3) {
-                        // 第三次或更多次点击，断开连接
-                        if (inputs.contains(pos)) {
-                            inputs.remove(inputs.indexOf(pos));
-                        } else if (outputs.contains(pos)) {
-                            outputs.remove(outputs.indexOf(pos));
-                        }
-                        linkModes.remove(pos);
-                        clickCounts.remove(pos);
-                        linkItemFilters.remove(pos);
-                    }
-                } else {
-                    // 未连接，添加为输出
-                    outputs.add(pos);
-                    linkModes.put(pos, false);
-                    clickCounts.put(pos, 1);
-                    linkItemFilters.put(pos, new Seq<>());
-                }
+                setOneLink(pos);
                 // 更新UI显示
                 if (rebuildUI != null) {
                     rebuildUI.run();
@@ -1104,133 +991,367 @@ public class MechanicalArm extends RoboticArmBase {
         
         @Override
         public Object config() {
-            IntSeq output = new IntSeq((inputs.size + outputs.size) * 2);
-            for (int pos : inputs) {
-                Point2 point2 = Point2.unpack(pos).sub(tile.x, tile.y);
-                output.add(point2.x, point2.y, 1); // 1表示输入
+            return compressConfig();
+        }
+        
+        public byte[] configBytes() {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                DataOutputStream dos = new DataOutputStream(new DeflaterOutputStream(baos));
+                
+                dos.write(1); // version
+                
+                dos.writeShort(inputs.size);
+                for (int pos : inputs) {
+                    Point2 point2 = Point2.unpack(pos).sub(tile.x, tile.y);
+                    dos.writeShort(point2.x);
+                    dos.writeShort(point2.y);
+                    dos.writeByte(linkModes.get(pos, true) ? 1 : 0);
+                    dos.writeInt(clickCounts.get(pos, 1));
+                    Seq<Item> itemFilter = linkItemFilters.get(pos, new Seq<>());
+                    dos.writeShort(itemFilter.size);
+                    for (Item item : itemFilter) {
+                        dos.writeShort(item.id);
+                    }
+                }
+                dos.writeShort(outputs.size);
+                for (int pos : outputs) {
+                    Point2 point2 = Point2.unpack(pos).sub(tile.x, tile.y);
+                    dos.writeShort(point2.x);
+                    dos.writeShort(point2.y);
+                    dos.writeByte(linkModes.get(pos, false) ? 1 : 0);
+                    dos.writeInt(clickCounts.get(pos, 0));
+                    Seq<Item> itemFilter = linkItemFilters.get(pos, new Seq<>());
+                    dos.writeShort(itemFilter.size);
+                    for (Item item : itemFilter) {
+                        dos.writeShort(item.id);
+                    }
+                }
+                dos.close();
+                return baos.toByteArray();
+            } catch (Exception e) {
+                Log.err("Error serializing config", e);
+                return new byte[0];
             }
-            for (int pos : outputs) {
-                Point2 point2 = Point2.unpack(pos).sub(tile.x, tile.y);
-                output.add(point2.x, point2.y, 0); // 0表示输出
+        }
+        
+        public void readConfig(byte[] data) {
+            if (data == null || data.length == 0) {
+                return;
             }
-            return output;
+            
+            try (DataInputStream dis = new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(data)))) {
+                int version = dis.read();
+                
+                // 版本检查
+                if (version != 1) {
+                    Log.warn("Unknown config version in readConfig: " + version);
+                    return;
+                }
+                
+                Seq<Integer> newInputs = new Seq<>();
+                Seq<Integer> newOutputs = new Seq<>();
+                ObjectMap<Integer, Boolean> newLinkModes = new ObjectMap<>();
+                ObjectMap<Integer, Integer> newClickCounts = new ObjectMap<>();
+                ObjectMap<Integer, Seq<Item>> newLinkItemFilters = new ObjectMap<>();
+                
+                int inputSize = dis.readShort();
+                // 数据验证
+                if (inputSize < 0 || inputSize > 1000) {
+                    Log.warn("Invalid input size in readConfig: " + inputSize);
+                    return;
+                }
+                
+                for (int i = 0; i < inputSize; i++) {
+                    int linkX = dis.readShort();
+                    int linkY = dis.readShort();
+                    int pos = Point2.pack(linkX + tile.x, linkY + tile.y);
+                    newInputs.add(pos);
+                    newLinkModes.put(pos, dis.readByte() == 1);
+                    newClickCounts.put(pos, dis.readInt());
+                    int itemFilterSize = dis.readShort();
+                    if (itemFilterSize < 0 || itemFilterSize > 100) {
+                        Log.warn("Invalid item filter size in readConfig: " + itemFilterSize);
+                        return;
+                    }
+                    Seq<Item> itemFilter = new Seq<>();
+                    for (int j = 0; j < itemFilterSize; j++) {
+                        Item item = content.item(dis.readShort());
+                        if (item != null) {
+                            itemFilter.add(item);
+                        }
+                    }
+                    newLinkItemFilters.put(pos, itemFilter);
+                }
+                
+                int outputSize = dis.readShort();
+                if (outputSize < 0 || outputSize > 1000) {
+                    Log.warn("Invalid output size in readConfig: " + outputSize);
+                    return;
+                }
+                
+                for (int i = 0; i < outputSize; i++) {
+                    int linkX = dis.readShort();
+                    int linkY = dis.readShort();
+                    int pos = Point2.pack(linkX + tile.x, linkY + tile.y);
+                    newOutputs.add(pos);
+                    newLinkModes.put(pos, dis.readByte() == 1);
+                    newClickCounts.put(pos, dis.readInt());
+                    int itemFilterSize = dis.readShort();
+                    if (itemFilterSize < 0 || itemFilterSize > 100) {
+                        Log.warn("Invalid item filter size in readConfig: " + itemFilterSize);
+                        return;
+                    }
+                    Seq<Item> itemFilter = new Seq<>();
+                    for (int j = 0; j < itemFilterSize; j++) {
+                        Item item = content.item(dis.readShort());
+                        if (item != null) {
+                            itemFilter.add(item);
+                        }
+                    }
+                    newLinkItemFilters.put(pos, itemFilter);
+                }
+                
+                // 只有在新配置包含实际链接时才更新，防止空配置覆盖现有数据
+                if (!newInputs.isEmpty() || !newOutputs.isEmpty()) {
+                    inputs = newInputs;
+                    outputs = newOutputs;
+                    linkModes = newLinkModes;
+                    clickCounts = newClickCounts;
+                    linkItemFilters = newLinkItemFilters;
+                }
+            } catch (Exception e) {
+                Log.err("Error deserializing config", e);
+            }
         }
         
         @Override
         public void configure(Object value) {
-            if (value instanceof IntSeq) {
-                IntSeq sq = (IntSeq)value;
-                Seq<Integer> newInputs = new Seq<>();
-                Seq<Integer> newOutputs = new Seq<>();
-                for (int i = 0; i < sq.size; i += 3) {
-                    int linkX = sq.get(i);
-                    int linkY = sq.get(i + 1);
-                    int type = sq.get(i + 2);
-                    int pos = Point2.pack(linkX + tile.x, linkY + tile.y);
-                    if (type == 1) {
-                        newInputs.add(pos);
-                        linkModes.put(pos, true);
-                        clickCounts.put(pos, 1);
-                    } else {
-                        newOutputs.add(pos);
-                        linkModes.put(pos, false);
-                        clickCounts.put(pos, 0);
-                    }
-                }
-                setInputs(newInputs);
-                setOutputs(newOutputs);
+            if (value instanceof byte[]) {
+                readConfig((byte[])value);
             } else if (value instanceof Integer) {
                 setOneLink((Integer)value);
+            }
+        }
+        
+        public byte[] compressConfig() {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                DataOutputStream dos = new DataOutputStream(new DeflaterOutputStream(baos));
+                
+                dos.write(1); // version
+                
+                // 添加防御性检查，确保集合不为null
+                Seq<Integer> safeInputs = inputs != null ? inputs : new Seq<>();
+                Seq<Integer> safeOutputs = outputs != null ? outputs : new Seq<>();
+                
+                dos.writeShort(safeInputs.size);
+                for (int pos : safeInputs) {
+                    Point2 point2 = Point2.unpack(pos);
+                    dos.writeShort(point2.x - tile.x);
+                    dos.writeShort(point2.y - tile.y);
+                    dos.writeByte(linkModes != null && linkModes.get(pos, true) ? 1 : 0);
+                    dos.writeInt(clickCounts != null ? clickCounts.get(pos, 1) : 1);
+                    Seq<Item> itemFilter = linkItemFilters != null ? linkItemFilters.get(pos, new Seq<>()) : new Seq<>();
+                    dos.writeShort(itemFilter.size);
+                    for (Item item : itemFilter) {
+                        dos.writeShort(item.id);
+                    }
+                }
+                
+                dos.writeShort(safeOutputs.size);
+                for (int pos : safeOutputs) {
+                    Point2 point2 = Point2.unpack(pos);
+                    dos.writeShort(point2.x - tile.x);
+                    dos.writeShort(point2.y - tile.y);
+                    dos.writeByte(linkModes != null && linkModes.get(pos, false) ? 1 : 0);
+                    dos.writeInt(clickCounts != null ? clickCounts.get(pos, 0) : 0);
+                    Seq<Item> itemFilter = linkItemFilters != null ? linkItemFilters.get(pos, new Seq<>()) : new Seq<>();
+                    dos.writeShort(itemFilter.size);
+                    for (Item item : itemFilter) {
+                        dos.writeShort(item.id);
+                    }
+                }
+                
+                dos.close();
+                return baos.toByteArray();
+            } catch (Exception e) {
+                Log.err("Error compressing config", e);
+                return new byte[0];
+            }
+        }
+        
+        public void decompressConfig(byte[] data) {
+            if (data == null || data.length == 0) {
+                return;
+            }
+            
+            try (DataInputStream dis = new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(data)))) {
+                int version = dis.read();
+                
+                if (version != 1) {
+                    Log.warn("Unknown config version: " + version);
+                    return;
+                }
+                
+                Seq<Integer> newInputs = new Seq<>();
+                Seq<Integer> newOutputs = new Seq<>();
+                ObjectMap<Integer, Boolean> newLinkModes = new ObjectMap<>();
+                ObjectMap<Integer, Integer> newClickCounts = new ObjectMap<>();
+                ObjectMap<Integer, Seq<Item>> newLinkItemFilters = new ObjectMap<>();
+                
+                int inputSize = dis.readShort();
+                if (inputSize < 0 || inputSize > 1000) {
+                    Log.warn("Invalid input size: " + inputSize);
+                    return;
+                }
+                
+                for (int i = 0; i < inputSize; i++) {
+                    int linkX = dis.readShort() + tile.x;
+                    int linkY = dis.readShort() + tile.y;
+                    int pos = Point2.pack(linkX, linkY);
+                    newInputs.add(pos);
+                    newLinkModes.put(pos, dis.readByte() == 1);
+                    newClickCounts.put(pos, dis.readInt());
+                    int itemFilterSize = dis.readShort();
+                    if (itemFilterSize < 0 || itemFilterSize > 100) {
+                        Log.warn("Invalid item filter size: " + itemFilterSize);
+                        return;
+                    }
+                    Seq<Item> itemFilter = new Seq<>();
+                    for (int j = 0; j < itemFilterSize; j++) {
+                        short itemId = dis.readShort();
+                        Item item = content.item(itemId);
+                        if (item != null) {
+                            itemFilter.add(item);
+                        }
+                    }
+                    newLinkItemFilters.put(pos, itemFilter);
+                }
+                
+                int outputSize = dis.readShort();
+                if (outputSize < 0 || outputSize > 1000) {
+                    Log.warn("Invalid output size: " + outputSize);
+                    return;
+                }
+                
+                for (int i = 0; i < outputSize; i++) {
+                    int linkX = dis.readShort() + tile.x;
+                    int linkY = dis.readShort() + tile.y;
+                    int pos = Point2.pack(linkX, linkY);
+                    newOutputs.add(pos);
+                    newLinkModes.put(pos, dis.readByte() == 1);
+                    newClickCounts.put(pos, dis.readInt());
+                    int itemFilterSize = dis.readShort();
+                    if (itemFilterSize < 0 || itemFilterSize > 100) {
+                        Log.warn("Invalid item filter size: " + itemFilterSize);
+                        return;
+                    }
+                    Seq<Item> itemFilter = new Seq<>();
+                    for (int j = 0; j < itemFilterSize; j++) {
+                        short itemId = dis.readShort();
+                        Item item = content.item(itemId);
+                        if (item != null) {
+                            itemFilter.add(item);
+                        }
+                    }
+                    newLinkItemFilters.put(pos, itemFilter);
+                }
+                
+                inputs = newInputs;
+                outputs = newOutputs;
+                linkModes = newLinkModes;
+                clickCounts = newClickCounts;
+                linkItemFilters = newLinkItemFilters;
+            } catch (Exception e) {
+                Log.err("Error decompressing config", e);
             }
         }
         
         @Override
         public void write(Writes write) {
             super.write(write);
-            write.s(inputs.size);
-            for (int pos : inputs) {
-                write.i(pos);
-                write.b((byte)(linkModes.get(pos, true) ? 1 : 0));
-                write.i(clickCounts.get(pos, 1));
-                Seq<Item> itemFilter = linkItemFilters.get(pos, new Seq<>());
-                write.s(itemFilter.size);
-                for (Item item : itemFilter) {
-                    write.s(item.id);
-                }
-            }
-            write.s(outputs.size);
-            for (int pos : outputs) {
-                write.i(pos);
-                write.b((byte)(linkModes.get(pos, false) ? 1 : 0));
-                write.i(clickCounts.get(pos, 0));
-                Seq<Item> itemFilter = linkItemFilters.get(pos, new Seq<>());
-                write.s(itemFilter.size);
-                for (Item item : itemFilter) {
-                    write.s(item.id);
-                }
-            }
+            
+            byte[] compressed = compressConfig();
+            write.i(compressed.length);
+            write.b(compressed);
+            
             write.i(phase);
             write.i(currentInputIndex);
             write.i(currentOutputIndex);
             write.f(progress);
             write.s(heldItem.item != null ? heldItem.item.id : -1);
             write.i(heldItem.amount);
-            write.i(itemTransferAmount); // 保存单次抓取的物品量
+            write.i(itemTransferAmount);
         }
         
         @Override
         public void read(Reads read, byte revision) {
             super.read(read, revision);
-            inputs = new Seq<>();
-            outputs = new Seq<>();
-            deadLinks = new Seq<>();
-            linkModes = new ObjectMap<>();
-            clickCounts = new ObjectMap<>();
-            linkItemFilters = new ObjectMap<>();
-            int inputSize = read.s();
-            for (int i = 0; i < inputSize; i++) {
-                int pos = read.i();
-                inputs.add(pos);
-                linkModes.put(pos, read.b() == 1);
-                clickCounts.put(pos, read.i());
-                // 读取物品过滤器
-                if (revision >= 3) {
-                    int itemFilterSize = read.s();
-                    Seq<Item> itemFilter = new Seq<>();
-                    for (int j = 0; j < itemFilterSize; j++) {
-                        int itemId = read.s();
-                        Item item = content.item(itemId);
-                        if (item != null) {
-                            itemFilter.add(item);
-                        }
-                    }
-                    linkItemFilters.put(pos, itemFilter);
+            
+            if (revision >= 5) {
+                int compl = read.i();
+                if (compl > 0) {
+                    byte[] bytes = new byte[compl];
+                    read.b(bytes);
+                    decompressConfig(bytes);
                 } else {
-                    linkItemFilters.put(pos, new Seq<>());
+                    // 如果没有压缩数据，初始化空集合（第一次加载或空配置）
+                    inputs = new Seq<>();
+                    outputs = new Seq<>();
+                    linkModes = new ObjectMap<>();
+                    clickCounts = new ObjectMap<>();
+                    linkItemFilters = new ObjectMap<>();
+                }
+            } else {
+                inputs = new Seq<>();
+                outputs = new Seq<>();
+                linkModes = new ObjectMap<>();
+                clickCounts = new ObjectMap<>();
+                linkItemFilters = new ObjectMap<>();
+                
+                int inputSize = read.s();
+                for (int i = 0; i < inputSize; i++) {
+                    int pos = read.i();
+                    inputs.add(pos);
+                    linkModes.put(pos, read.b() == 1);
+                    clickCounts.put(pos, read.i());
+                    if (revision >= 3) {
+                        int itemFilterSize = read.s();
+                        Seq<Item> itemFilter = new Seq<>();
+                        for (int j = 0; j < itemFilterSize; j++) {
+                            Item item = content.item(read.s());
+                            if (item != null) {
+                                itemFilter.add(item);
+                            }
+                        }
+                        linkItemFilters.put(pos, itemFilter);
+                    } else {
+                        linkItemFilters.put(pos, new Seq<>());
+                    }
+                }
+                int outputSize = read.s();
+                for (int i = 0; i < outputSize; i++) {
+                    int pos = read.i();
+                    outputs.add(pos);
+                    linkModes.put(pos, read.b() == 1);
+                    clickCounts.put(pos, read.i());
+                    if (revision >= 3) {
+                        int itemFilterSize = read.s();
+                        Seq<Item> itemFilter = new Seq<>();
+                        for (int j = 0; j < itemFilterSize; j++) {
+                            Item item = content.item(read.s());
+                            if (item != null) {
+                                itemFilter.add(item);
+                            }
+                        }
+                        linkItemFilters.put(pos, itemFilter);
+                    } else {
+                        linkItemFilters.put(pos, new Seq<>());
+                    }
                 }
             }
-            int outputSize = read.s();
-            for (int i = 0; i < outputSize; i++) {
-                int pos = read.i();
-                outputs.add(pos);
-                linkModes.put(pos, read.b() == 1);
-                clickCounts.put(pos, read.i());
-                // 读取物品过滤器
-                if (revision >= 3) {
-                    int itemFilterSize = read.s();
-                    Seq<Item> itemFilter = new Seq<>();
-                    for (int j = 0; j < itemFilterSize; j++) {
-                        int itemId = read.s();
-                        Item item = content.item(itemId);
-                        if (item != null) {
-                            itemFilter.add(item);
-                        }
-                    }
-                    linkItemFilters.put(pos, itemFilter);
-                } else {
-                    linkItemFilters.put(pos, new Seq<>());
-                }
-            }
+            
             phase = read.i();
             currentInputIndex = read.i();
             currentOutputIndex = read.i();
@@ -1238,7 +1359,6 @@ public class MechanicalArm extends RoboticArmBase {
             int itemId = read.s();
             int amount = read.i();
             heldItem = new ItemStack(itemId >= 0 ? content.item(itemId) : null, amount);
-            // 读取单次抓取的物品量，默认为1
             if (revision >= 4) {
                 itemTransferAmount = read.i();
             } else {
@@ -1249,7 +1369,7 @@ public class MechanicalArm extends RoboticArmBase {
         
         @Override
         public byte version() {
-            return 4; // 升级版本号到4
+            return 5;
         }
     }
 }

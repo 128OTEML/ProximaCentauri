@@ -19,15 +19,12 @@ public class RoboticArmBase extends GenericCrafter{
 
     public RoboticArmBase(String name){
         super(name);
-        hasItems = true;
+        hasItems = false;
         solid = true;
         update = false;
         sync = true;
         destructible = true;
-        separateItemCapacity = true;
         group = BlockGroup.transportation;
-        flags = EnumSet.of(BlockFlag.storage);
-        allowResupply = true;
         envEnabled = Env.any;
     }
 
@@ -51,12 +48,7 @@ public class RoboticArmBase extends GenericCrafter{
 
         @Override
         public boolean acceptItem(Building source, Item item){
-            return linkedCore != null ? linkedCore.acceptItem(source, item) : items.get(item) < getMaximumAccepted(item);
-        }
-
-        @Override
-        public boolean canUnload(){
-            return linkedCore == null ? super.canUnload() : linkedCore.canUnload();
+            return linkedCore != null && linkedCore.acceptItem(source, item);
         }
 
         @Override
@@ -67,8 +59,6 @@ public class RoboticArmBase extends GenericCrafter{
                 }
                 ((CoreBuild)linkedCore).noEffect = true;
                 linkedCore.handleItem(source, item);
-            }else{
-                super.handleItem(source, item);
             }
         }
 
@@ -81,24 +71,15 @@ public class RoboticArmBase extends GenericCrafter{
 
         @Override
         public int removeStack(Item item, int amount){
-            int result = super.removeStack(item, amount);
-
-            if(linkedCore != null && team == state.rules.defaultTeam && state.isCampaign()){
-                state.rules.sector.info.handleCoreItem(item, -result);
+            if(linkedCore != null){
+                return linkedCore.removeStack(item, amount);
             }
-
-            return result;
+            return 0;
         }
 
         @Override
         public int getMaximumAccepted(Item item){
-            return linkedCore != null ? linkedCore.getMaximumAccepted(item) : itemCapacity;
-        }
-
-        @Override
-        public int explosionItemCap(){
-            //when linked to a core, containers/vaults are made significantly less explosive.
-            return linkedCore != null ? Math.min(itemCapacity/60, 6) : itemCapacity;
+            return linkedCore != null ? linkedCore.getMaximumAccepted(item) : 0;
         }
 
         @Override
@@ -115,27 +96,13 @@ public class RoboticArmBase extends GenericCrafter{
         }
 
         @Override
-        public void overwrote(Seq<Building> previous){
-            //only add prev items when core is not linked
-            if(linkedCore == null){
-                for(Building other : previous){
-                    if(other.items != null && other.items != items && !(other instanceof RoboticArmBuild b && b.linkedCore != null)){
-                        items.add(other.items);
-                    }
-                }
-
-                items.each((i, a) -> items.set(i, Math.min(a, itemCapacity)));
-            }
-        }
-
-        @Override
         public boolean canPickup(){
             return linkedCore == null;
         }
 
         @Override
         public boolean allowDeposit(){
-            return linkedCore != null || super.allowDeposit();
+            return linkedCore != null && linkedCore.allowDeposit();
         }
     }
 }
