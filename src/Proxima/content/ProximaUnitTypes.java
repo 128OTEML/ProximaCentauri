@@ -101,7 +101,7 @@ public class ProximaUnitTypes {
 
             // 移动参数
             drag = 0.05f;
-            speed = 3f;
+            speed = 4.5f;
             rotateSpeed = 15f;
             accel = 0.1f;
 
@@ -119,9 +119,9 @@ public class ProximaUnitTypes {
             engineSize = -1;
 
             // 添加多个引擎，形成复杂的尾焰效果
-            engines.add(new AncientEngine(-2f, -6f, 3f, -90));
-            engines.add(new AncientEngine(2f, -6f, 3f, -90));
-            engines.add(new AncientEngine(0f, -7f, 4f, -90, 0.45f, 0.6f, 2.6f));
+            engines.add(new AncientEngine(-2f, -7.5f, 1f, -90));
+            engines.add(new AncientEngine(2f, -7.5f, 1f, -90));
+            engines.add(new AncientEngine(0f, -8.5f, 1.5f, -90, 0.45f, 0.6f, 2.6f));
 
             // 大小 - 1.3格大小
             hitSize = 10.4f;
@@ -147,7 +147,7 @@ public class ProximaUnitTypes {
                 recoil = 1.25f;
                 minWarmup = 0.935f;
                 cooldownTime = reload - 30f;
-                shootY = 3f;
+                shootY = 1.5f;
 
                 // 音效
                 shootSound = Sounds.shootLaser;
