@@ -80,6 +80,9 @@ public class ProximaBlocks{
     // 管道
     public static Block pipe;
 
+    // 16方向测试方块
+    public static Block sixteenDirectionTestBlock;
+
     public static void load(){
         oreIron = new OreBlock(ProximaItems.iron){{
             variants = 3;
@@ -424,6 +427,18 @@ public class ProximaBlocks{
                 Items.lead, 5
             ));
             bridgeReplacement = adaptLiquidBridge;
+        }};
+
+        // 16方向测试方块 - 只有生命值属性
+        sixteenDirectionTestBlock = new SixteenDirectionBlock("sixteen-direction-test-block"){{
+            destructible = true;
+            health = 200;
+            solid = true;
+            requirements(Category.effect, ItemStack.with(
+                Items.copper, 50,
+                Items.lead, 30
+            ));
+            buildVisibility = BuildVisibility.shown;
         }};
     }
 }

@@ -6,6 +6,7 @@ import Proxima.content.ProximaUnitTypes;
 import Proxima.effects.SpecialDeathEffects;
 import Proxima.liquids.ProximaLiquids;
 import Proxima.special.SpecialContent;
+import Proxima.input.ProximaInputHandler;
 import arc.*;
 import arc.graphics.g2d.*;
 import arc.input.*;
@@ -19,6 +20,7 @@ import mindustry.*;
 import mindustry.game.EventType.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
+import mindustry.input.DesktopInput;
 import mindustry.mod.*;
 import mindustry.ui.dialogs.BaseDialog;
 
@@ -29,6 +31,13 @@ public class ProximaCentauriMod extends Mod{
 
         //listen for game load event
         Events.on(ClientLoadEvent.class, e -> {
+            // 替换输入处理器以支持16方向箭头绘制
+            if (Vars.control != null && Vars.control.input instanceof DesktopInput) {
+                ProximaInputHandler proximaInput = new ProximaInputHandler();
+                proximaInput.block = Vars.control.input.block;
+                Vars.control.input = proximaInput;
+            }
+
             //show dialog upon startup
             Time.runTask(10f, () -> {
                 BaseDialog dialog = new BaseDialog("frog");
