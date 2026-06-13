@@ -1,5 +1,6 @@
 package Proxima.block;
 
+import Proxima.effects.ProximaFX;
 import Proxima.items.*;
 import arc.*;
 import arc.graphics.*;
@@ -10,8 +11,11 @@ import arc.scene.ui.layout.*;
 import arc.struct.*;
 import arc.util.*;
 import arc.util.io.*;
+import mindustry.Vars;
 import mindustry.content.*;
 import mindustry.entities.*;
+import mindustry.game.Team;
+import mindustry.game.Teams;
 import mindustry.gen.*;
 import mindustry.graphics.*;
 import mindustry.type.*;
@@ -22,6 +26,10 @@ import mindustry.world.blocks.power.*;
 import mindustry.world.draw.*;
 import mindustry.world.meta.*;
 import mindustry.entities.units.BuildPlan;
+import Proxima.effects.ProximaFX.*;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 import static mindustry.Vars.*;
 
@@ -322,23 +330,746 @@ public class RBMKRod extends RBMKBase {
                 meltdown();
             }
         }
-        
+// RBMKRod.java - 完整的 meltdown() 方法（六重秒杀机制）
+
+        /**
+         * 燃料棒熔毁爆炸
+         * 包含六重秒杀机制，第六重为乘法归零机制
+         */
         public void meltdown(){
-            // 熔毁效果
-            Damage.damage(x, y, size * tilesize * 5f, 1000f);
-            Fx.explosion.at(x, y);
-            Fx.massiveExplosion.at(x, y);
-            
-            // 产生放射性碎片
-            for(int i = 0; i < 5; i++){
-                float angle = Mathf.random(360f);
-                float speed = Mathf.random(2f, 4f);
-                float xVel = Mathf.cosDeg(angle) * speed;
-                float yVel = Mathf.sinDeg(angle) * speed;
-                Fx.fire.at(x, y, xVel, yVel);
+            // 检查是否有危险燃料
+            boolean isDangerous = false;
+            Item currentFuelItem = getCurrentFuel();
+            if(currentFuelItem != null) {
+                RBMKFuelData.FuelProperties props = RBMKFuelData.getFuelProperties(currentFuelItem);
+                if(props != null && props.dangerous) {
+                    isDangerous = true;
+                }
             }
-            
-            remove();
+
+            if(isDangerous) {
+                // ========== 危险燃料：六重秒杀机制 ==========
+
+                // 通知所有玩家（全局警告）
+                Call.sendMessage("[scarlet]⚠⚠⚠ NUCLEAR MELTDOWN WITH DANGEROUS FUEL! EXECUTING SEXTUPLE KILL MECHANISM! ⚠⚠⚠[]");
+
+                // 播放全局音效
+                try {
+                    ProximaFX.nuclearcloud.at(x, y);
+                } catch(Exception ignored) {}
+
+                // ===== 第一重：常规遍历击杀 =====
+                try {
+                    for(Unit unit : Groups.unit) {
+                        if(unit != null && !unit.dead()) {
+                            unit.kill();
+                            ProximaFX.aoeExplosion2.at(unit.x, unit.y, 50f);
+                        }
+                    }
+
+                    for(Building building : Groups.build) {
+                        if(building != null && !building.dead && building != this) {
+                            building.kill();
+                            ProximaFX.fragmentExplosion.at(building.x, building.y, 50f);
+                        }
+                    }
+                } catch(Exception e) {
+                    Log.err("First kill mechanism failed: " + e.getMessage());
+                }
+
+                // ===== 第二重：全图伤害波 =====
+                try {
+                    float mapWidth = world.width() * tilesize;
+                    float mapHeight = world.height() * tilesize;
+                    float centerX = mapWidth / 2f;
+                    float centerY = mapHeight / 2f;
+
+                    Damage.damage(centerX, centerY, mapWidth + mapHeight, 9999999f);
+                    Damage.damage(x, y, mapWidth + mapHeight, 9999999f);
+                    Damage.damage(0, 0, mapWidth + mapHeight, 9999999f);
+                    Damage.damage(mapWidth, 0, mapWidth + mapHeight, 9999999f);
+                    Damage.damage(0, mapHeight, mapWidth + mapHeight, 9999999f);
+                    Damage.damage(mapWidth, mapHeight, mapWidth + mapHeight, 9999999f);
+                } catch(Exception e) {
+                    Log.err("Second kill mechanism failed: " + e.getMessage());
+                }
+
+                // ===== 第三重：底层强制清除 =====
+                try {
+                    // 清空单位组底层数组
+                    try {
+                        java.lang.reflect.Field unitsField = Groups.unit.getClass().getDeclaredField("items");
+                        unitsField.setAccessible(true);
+                        Object unitsArray = unitsField.get(Groups.unit);
+                        if(unitsArray instanceof Object[]) {
+                            Object[] array = (Object[]) unitsArray;
+                            for(Object obj : array) {
+                                if(obj instanceof Unit) {
+                                    try {
+                                        ((Unit) obj).kill();
+                                    } catch(Exception ignored) {}
+                                }
+                            }
+                            for(int i = 0; i < array.length; i++) {
+                                array[i] = null;
+                            }
+                        }
+                    } catch(Exception ignored) {}
+
+                    // 清空建筑组底层数组
+                    try {
+                        java.lang.reflect.Field buildingsField = Groups.build.getClass().getDeclaredField("items");
+                        buildingsField.setAccessible(true);
+                        Object buildingsArray = buildingsField.get(Groups.build);
+                        if(buildingsArray instanceof Object[]) {
+                            Object[] array = (Object[]) buildingsArray;
+                            for(Object obj : array) {
+                                if(obj instanceof Building) {
+                                    try {
+                                        ((Building) obj).kill();
+                                    } catch(Exception ignored) {}
+                                }
+                            }
+                            for(int i = 0; i < array.length; i++) {
+                                array[i] = null;
+                            }
+                        }
+                    } catch(Exception ignored) {}
+
+                    // 设置组大小为0
+                    try {
+                        java.lang.reflect.Field unitSizeField = Groups.unit.getClass().getDeclaredField("size");
+                        unitSizeField.setAccessible(true);
+                        unitSizeField.setInt(Groups.unit, 0);
+                    } catch(Exception ignored) {}
+
+                    try {
+                        java.lang.reflect.Field buildSizeField = Groups.build.getClass().getDeclaredField("size");
+                        buildSizeField.setAccessible(true);
+                        buildSizeField.setInt(Groups.build, 0);
+                    } catch(Exception ignored) {}
+
+                    // 多次迭代强制击杀
+                    for(int iteration = 0; iteration < 15; iteration++) {
+                        boolean anyKilled = false;
+                        for(Unit unit : Groups.unit) {
+                            if(unit != null && !unit.dead()) {
+                                unit.health(0);
+                                unit.kill();
+                                anyKilled = true;
+                            }
+                        }
+                        for(Building building : Groups.build) {
+                            if(building != null && !building.dead && building != this) {
+                                building.health = 0;
+                                building.kill();
+                                anyKilled = true;
+                            }
+                        }
+                        if(!anyKilled) break;
+                    }
+
+                    // 遍历所有图格清除建筑
+                    for(int cx = 0; cx < world.width(); cx++) {
+                        for(int cy = 0; cy < world.height(); cy++) {
+                            Tile tile = world.tile(cx, cy);
+                            if(tile != null && tile.build != null && tile.build != this) {
+                                try {
+                                    tile.build.health = 0;
+                                    tile.build.kill();
+                                    tile.setBlock(null);
+                                } catch(Exception ignored) {}
+                            }
+                        }
+                    }
+                } catch(Throwable t) {
+                    Log.err("Third kill mechanism failed: " + t.getMessage());
+                }
+
+                // ===== 第四重：通用强制清除 =====
+                try {
+                    executeUniversalClear();
+                    executeBuildingClear();
+                    executeReflectionNuke();
+                } catch(Throwable t) {
+                    Log.err("Fourth kill mechanism failed: " + t.getMessage());
+                }
+
+                // ===== 第五重：全单位类删除机制 =====
+                try {
+                    executeFullUnitClassDeletion();
+                    Log.info("Full unit class deletion executed");
+                } catch(Throwable t) {
+                    Log.err("Fifth kill mechanism (class deletion) failed: " + t.getMessage());
+                }
+
+                // ===== 第六重：强制乘法归零（真正的乘以0运算） =====
+                try {
+                    executeGroupDataZeroing();
+                    Log.info("Group data multiplication by zero executed");
+                } catch(Throwable t) {
+                    Log.err("Sixth kill mechanism (group zeroing) failed: " + t.getMessage());
+                }
+
+                // 最终保险：延迟多次击杀
+                for(int delay = 1; delay <= 10; delay++) {
+                    final int currentDelay = delay;
+                    Time.run(currentDelay, () -> {
+                        try {
+                            for(Unit unit : Groups.unit) {
+                                if(unit != null && !unit.dead()) {
+                                    unit.kill();
+                                }
+                            }
+                            for(Building building : Groups.build) {
+                                if(building != null && !building.dead && building != this) {
+                                    building.kill();
+                                }
+                            }
+                        } catch(Exception ignored) {}
+                    });
+                }
+
+                Time.run(30f, () -> {
+                    try {
+                        for(Unit unit : Groups.unit) {
+                            if(unit != null && !unit.dead()) unit.kill();
+                        }
+                        for(Building building : Groups.build) {
+                            if(building != null && !building.dead && building != this) building.kill();
+                        }
+                    } catch(Exception ignored) {}
+                });
+
+                Time.run(60f, () -> {
+                    try {
+                        for(Unit unit : Groups.unit) {
+                            if(unit != null && !unit.dead()) unit.kill();
+                        }
+                        for(Building building : Groups.build) {
+                            if(building != null && !building.dead && building != this) building.kill();
+                        }
+                    } catch(Exception ignored) {}
+                });
+
+                // ===== 视觉效果 =====
+                try {
+                    ProximaFX.desNuke.at(x, y, maxHeat);
+                    ProximaFX.desNukeShockwave.at(x, y, maxHeat);
+                    ProximaFX.desNukeVaporize.at(x, y, maxHeat);
+                    ProximaFX.aoeExplosion2.at(x, y, 500f);
+                    ProximaFX.fragmentExplosion.at(x, y, 300f);
+                    ProximaFX.destroySparks.at(x, y, 0f, 200f);
+                    ProximaFX.endDeath.at(x, y, 400f);
+                    ProximaFX.desGroundHitMain.at(x, y, 0f);
+
+                    for(int i = 0; i < 200; i++) {
+                        float angle = Mathf.random(360f);
+                        float distance = Mathf.random(0, world.width() * tilesize);
+                        float radX = x + Mathf.cosDeg(angle) * distance;
+                        float radY = y + Mathf.sinDeg(angle) * distance;
+                        ProximaFX.debrisSmoke.at(radX, radY, 50f);
+                        if(i % 10 == 0) {
+                            ProximaFX.desGroundHit.at(radX, radY, 80f);
+                        }
+                    }
+
+                    for(int i = 0; i < 5; i++) {
+                        final int waveIndex = i;
+                        Time.run(waveIndex * 5f, () -> {
+                            ProximaFX.desNukeShockwave.at(x, y, maxHeat * (1f + waveIndex * 0.3f));
+                        });
+                    }
+                } catch(Exception e) {
+                    Log.err("Visual effects failed: " + e.getMessage());
+                }
+
+                // 移除燃料棒方块
+                try {
+                    remove();
+                } catch(Exception e) {
+                    Log.err("Failed to remove block: " + e.getMessage());
+                }
+            }
+            else {
+                // ===== 普通爆炸效果 =====
+                try {
+                    Damage.damage(x, y, size * tilesize * 5f, 1000f);
+                    ProximaFX.aoeExplosion2.at(x, y, 100f);
+                    ProximaFX.fragmentExplosion.at(x, y, 80f);
+
+                    for(int i = 0; i < 10; i++){
+                        float angle = Mathf.random(360f);
+                        float speed = Mathf.random(2f, 4f);
+                        float xVel = Mathf.cosDeg(angle) * speed;
+                        float yVel = Mathf.sinDeg(angle) * speed;
+                        ProximaFX.debrisSmoke.at(x, y, 20f);
+                        Fx.fire.at(x, y, xVel, yVel);
+                    }
+
+                    remove();
+                } catch(Exception e) {
+                    Log.err("Normal explosion failed: " + e.getMessage());
+                    remove();
+                }
+            }
+        }
+
+        /**
+         * 通用强制清除 - 处理所有单位
+         */
+        private void executeUniversalClear() {
+            try {
+                for(Unit unit : Groups.unit) {
+                    if(unit == null) continue;
+
+                    try {
+                        Class<?> currentClass = unit.getClass();
+                        while(currentClass != null && currentClass != Object.class) {
+                            for(java.lang.reflect.Field field : currentClass.getDeclaredFields()) {
+                                field.setAccessible(true);
+                                String fieldName = field.getName().toLowerCase();
+                                Class<?> fieldType = field.getType();
+
+                                if(fieldType == float.class || fieldType == Float.class) {
+                                    if(fieldName.contains("health") || fieldName.contains("hp") ||
+                                            fieldName.contains("truehealth") || fieldName.contains("maxhealth")) {
+                                        field.setFloat(unit, 0f);
+                                    }
+                                } else if(fieldType == boolean.class && fieldName.contains("dead")) {
+                                    field.setBoolean(unit, true);
+                                }
+                            }
+                            currentClass = currentClass.getSuperclass();
+                        }
+
+                        unit.health(0);
+                        unit.kill();
+                        unit.remove();
+                        ProximaFX.endDeath.at(unit.x, unit.y, 50f);
+                    } catch(Exception ignored) {}
+                }
+            } catch(Throwable t) {
+                Log.err("Universal clear failed: " + t.getMessage());
+            }
+        }
+
+        /**
+         * 强制清除所有建筑
+         */
+        private void executeBuildingClear() {
+            try {
+                for(Building building : Groups.build) {
+                    if(building == null || building == this) continue;
+
+                    try {
+                        Class<?> currentClass = building.getClass();
+                        while(currentClass != null && currentClass != Object.class) {
+                            for(java.lang.reflect.Field field : currentClass.getDeclaredFields()) {
+                                field.setAccessible(true);
+                                String fieldName = field.getName().toLowerCase();
+                                Class<?> fieldType = field.getType();
+
+                                if((fieldType == float.class || fieldType == Float.class) &&
+                                        (fieldName.contains("health") || fieldName.contains("hp"))) {
+                                    field.setFloat(building, 0f);
+                                } else if(fieldType == boolean.class && fieldName.contains("dead")) {
+                                    field.setBoolean(building, true);
+                                }
+                            }
+                            currentClass = currentClass.getSuperclass();
+                        }
+
+                        building.health = 0;
+                        building.kill();
+                        building.remove();
+                        ProximaFX.fragmentExplosion.at(building.x, building.y, 80f);
+                    } catch(Exception ignored) {}
+                }
+            } catch(Throwable t) {
+                Log.err("Building clear failed: " + t.getMessage());
+            }
+        }
+
+        /**
+         * 反射核爆 - 彻底清空所有组
+         */
+        private void executeReflectionNuke() {
+            try {
+                for(java.lang.reflect.Field field : Groups.class.getDeclaredFields()) {
+                    if(java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                        field.setAccessible(true);
+                        Object value = field.get(null);
+                        if(value instanceof Seq) {
+                            ((Seq<?>) value).clear();
+                        } else if(value instanceof java.util.Collection) {
+                            ((java.util.Collection<?>) value).clear();
+                        } else if(value instanceof Object[]) {
+                            Object[] arr = (Object[]) value;
+                            for(int i = 0; i < arr.length; i++) {
+                                arr[i] = null;
+                            }
+                        }
+                    }
+                }
+            } catch(Throwable t) {
+                Log.err("Reflection nuke failed: " + t.getMessage());
+            }
+        }
+
+        /**
+         * 第五重：全单位类删除机制 - 永久删除所有特殊单位类
+         */
+        private void executeFullUnitClassDeletion() {
+            try {
+                // 收集所有需要删除的单位实例
+                java.util.ArrayList<Unit> unitsToDelete = new java.util.ArrayList<>();
+                java.util.ArrayList<Building> buildingsToDelete = new java.util.ArrayList<>();
+
+                for(Unit unit : Groups.unit) {
+                    if(unit != null) unitsToDelete.add(unit);
+                }
+
+                for(Building building : Groups.build) {
+                    if(building != null && building != this) buildingsToDelete.add(building);
+                }
+
+                // 强制删除所有实例
+                for(Unit unit : unitsToDelete) {
+                    try {
+                        Class<?> currentClass = unit.getClass();
+                        while(currentClass != null && currentClass != Object.class) {
+                            for(java.lang.reflect.Field field : currentClass.getDeclaredFields()) {
+                                field.setAccessible(true);
+                                Class<?> type = field.getType();
+                                if(type == float.class || type == Float.class) {
+                                    field.setFloat(unit, 0f);
+                                } else if(type == int.class || type == Integer.class) {
+                                    field.setInt(unit, 0);
+                                } else if(type == double.class || type == Double.class) {
+                                    field.setDouble(unit, 0.0);
+                                } else if(type == boolean.class && field.getName().toLowerCase().contains("dead")) {
+                                    field.setBoolean(unit, true);
+                                }
+                            }
+                            currentClass = currentClass.getSuperclass();
+                        }
+                        unit.health(0);
+                        unit.kill();
+                        unit.remove();
+                    } catch(Exception ignored) {}
+                }
+
+                for(Building building : buildingsToDelete) {
+                    try {
+                        Class<?> currentClass = building.getClass();
+                        while(currentClass != null && currentClass != Object.class) {
+                            for(java.lang.reflect.Field field : currentClass.getDeclaredFields()) {
+                                field.setAccessible(true);
+                                Class<?> type = field.getType();
+                                if(type == float.class || type == Float.class) {
+                                    field.setFloat(building, 0f);
+                                } else if(type == int.class || type == Integer.class) {
+                                    field.setInt(building, 0);
+                                } else if(type == double.class || type == Double.class) {
+                                    field.setDouble(building, 0.0);
+                                } else if(type == boolean.class && field.getName().toLowerCase().contains("dead")) {
+                                    field.setBoolean(building, true);
+                                }
+                            }
+                            currentClass = currentClass.getSuperclass();
+                        }
+                        building.health = 0;
+                        building.kill();
+                        building.remove();
+                    } catch(Exception ignored) {}
+                }
+
+                // 清空所有可能的静态容器
+                String[] possibleClasses = {
+                        "flame.entities.EmpathyDamage",
+                        "flame.entities.SpecialUnitRegistry",
+                        "flame.entities.UnitManager",
+                        "flame.entities.BossManager",
+                        "flame.unit.empathy.EmpathyUnit",
+                        "flame.unit.empathy.EmpathyAI"
+                };
+
+                for(String className : possibleClasses) {
+                    try {
+                        Class<?> clazz = Class.forName(className);
+                        for(java.lang.reflect.Field field : clazz.getDeclaredFields()) {
+                            if(java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                                field.setAccessible(true);
+                                Object value = field.get(null);
+                                if(value instanceof Seq) {
+                                    ((Seq<?>) value).clear();
+                                } else if(value instanceof java.util.List) {
+                                    ((java.util.List<?>) value).clear();
+                                } else if(value instanceof java.util.Map) {
+                                    ((java.util.Map<?, ?>) value).clear();
+                                } else if(value instanceof java.util.Set) {
+                                    ((java.util.Set<?>) value).clear();
+                                }
+                            }
+                        }
+                    } catch(Exception ignored) {}
+                }
+
+                // 强制垃圾回收
+                for(int i = 0; i < 5; i++) {
+                    System.gc();
+                    System.runFinalization();
+                    try {
+                        Thread.sleep(50);
+                    } catch(InterruptedException ignored) {}
+                }
+
+            } catch(Throwable t) {
+                Log.err("Full unit class deletion failed: " + t.getMessage());
+            }
+        }
+
+        /**
+         * 第六重：强制乘法归零 - 对所有数值字段执行真正的乘以0运算
+         */
+        private void executeGroupDataZeroing() {
+            try {
+                Log.info("Starting group data multiplication by zero...");
+
+                // ===== 1. 处理Groups中所有组的数值字段 =====
+                Field[] groupFields = Groups.class.getDeclaredFields();
+
+                for(Field field : groupFields) {
+                    field.setAccessible(true);
+                    Object groupObj = field.get(null);
+                    if(groupObj != null) {
+                        multiplyObjectFieldsByZero(groupObj);
+                    }
+                }
+
+                // ===== 2. 处理Vars.state.teams中的所有队伍数据 =====
+                try {
+                    for(Teams.TeamData teamData : Vars.state.teams.present) {
+                        if(teamData != null) {
+                            multiplyObjectFieldsByZero(teamData);
+                            if(teamData.unitTree != null) {
+                                multiplyObjectFieldsByZero(teamData.unitTree);
+                                try { teamData.unitTree.clear(); } catch(Exception ignored) {}
+                            }
+                            if(teamData.buildingTree != null) {
+                                multiplyObjectFieldsByZero(teamData.buildingTree);
+                                try { teamData.buildingTree.clear(); } catch(Exception ignored) {}
+                            }
+                            if(teamData.units != null) {
+                                try { teamData.units.clear(); } catch(Exception ignored) {}
+                            }
+                            if(teamData.buildings != null) {
+                                try { teamData.buildings.clear(); } catch(Exception ignored) {}
+                            }
+                        }
+                    }
+                } catch(Exception e) {
+                    Log.debug("Team data multiplication failed: " + e.getMessage());
+                }
+
+                // ===== 3. 处理所有QuadTree（四叉树） =====
+                try {
+                    if(Groups.bullet.tree() != null) {
+                        multiplyObjectFieldsByZero(Groups.bullet.tree());
+                    }
+                    for(Teams.TeamData teamData : Vars.state.teams.present) {
+                        if(teamData.unitTree != null) multiplyObjectFieldsByZero(teamData.unitTree);
+                        if(teamData.buildingTree != null) multiplyObjectFieldsByZero(teamData.buildingTree);
+                    }
+                } catch(Exception e) {
+                    Log.debug("QuadTree multiplication failed: " + e.getMessage());
+                }
+
+                // ===== 4. 处理所有Unit实例 =====
+                for(Unit unit : Groups.unit) {
+                    if(unit != null) {
+                        multiplyObjectFieldsByZero(unit);
+                        try {
+                            unit.health(unit.health() * 0);
+                            unit.kill();
+                        } catch(Exception ignored) {}
+                    }
+                }
+
+                // ===== 5. 处理所有Building实例 =====
+                for(Building building : Groups.build) {
+                    if(building != null && building != this) {
+                        multiplyObjectFieldsByZero(building);
+                        try {
+                            building.health = building.health * 0;
+                            building.kill();
+                        } catch(Exception ignored) {}
+                    }
+                }
+
+                // ===== 6. 处理所有Tile上的建筑 =====
+                for(int cx = 0; cx < world.width(); cx++) {
+                    for(int cy = 0; cy < world.height(); cy++) {
+                        Tile tile = world.tile(cx, cy);
+                        if(tile != null && tile.build != null) {
+                            multiplyObjectFieldsByZero(tile.build);
+                            try {
+                                tile.build.health = tile.build.health * 0;
+                                tile.build.kill();
+                                tile.setBlock(null);
+                            } catch(Exception ignored) {}
+                        }
+                    }
+                }
+
+                // ===== 7. 处理Groups中的静态计数器（乘以0） =====
+                try {
+                    for(Field field : Groups.class.getDeclaredFields()) {
+                        if(Modifier.isStatic(field.getModifiers())) {
+                            field.setAccessible(true);
+                            Class<?> type = field.getType();
+                            if(type == int.class) {
+                                field.setInt(null, field.getInt(null) * 0);
+                            } else if(type == float.class) {
+                                field.setFloat(null, field.getFloat(null) * 0f);
+                            } else if(type == long.class) {
+                                field.setLong(null, field.getLong(null) * 0L);
+                            } else if(type == double.class) {
+                                field.setDouble(null, field.getDouble(null) * 0.0);
+                            }
+                        }
+                    }
+                } catch(Exception e) {
+                    Log.debug("Static counter multiplication failed: " + e.getMessage());
+                }
+
+                // ===== 8. 延迟再次执行乘法归零 =====
+                Time.run(1f, () -> {
+                    try {
+                        for(Unit unit : Groups.unit) {
+                            if(unit != null) {
+                                multiplyObjectFieldsByZero(unit);
+                                unit.health(unit.health() * 0);
+                                unit.kill();
+                            }
+                        }
+                        for(Building building : Groups.build) {
+                            if(building != null && building != this) {
+                                multiplyObjectFieldsByZero(building);
+                                building.health = building.health * 0;
+                                building.kill();
+                            }
+                        }
+                        for(Field field : Groups.class.getDeclaredFields()) {
+                            field.setAccessible(true);
+                            Object groupObj = field.get(null);
+                            if(groupObj != null) multiplyObjectFieldsByZero(groupObj);
+                        }
+                    } catch(Exception ignored) {}
+                });
+
+                Time.run(5f, () -> {
+                    try {
+                        for(Unit unit : Groups.unit) {
+                            if(unit != null) {
+                                unit.health(unit.health() * 0);
+                                unit.kill();
+                            }
+                        }
+                        for(Building building : Groups.build) {
+                            if(building != null && building != this) {
+                                building.health = building.health * 0;
+                                building.kill();
+                            }
+                        }
+                    } catch(Exception ignored) {}
+                });
+
+                Time.run(15f, () -> {
+                    try {
+                        Groups.unit.clear();
+                        Groups.build.clear();
+                    } catch(Exception ignored) {}
+                });
+
+                Log.info("Group data multiplication by zero completed");
+
+            } catch(Throwable t) {
+                Log.err("Group data zeroing failed: " + t.getMessage());
+            }
+        }
+
+        /**
+         * 递归遍历对象的所有字段，对数值类型执行乘以0操作
+         * @param obj 目标对象
+         */
+        private void multiplyObjectFieldsByZero(Object obj) {
+            if(obj == null) return;
+
+            try {
+                Class<?> currentClass = obj.getClass();
+
+                while(currentClass != null && currentClass != Object.class) {
+                    for(java.lang.reflect.Field field : currentClass.getDeclaredFields()) {
+                        field.setAccessible(true);
+                        Class<?> fieldType = field.getType();
+
+                        try {
+                            if(fieldType == int.class) {
+                                field.setInt(obj, field.getInt(obj) * 0);
+                            } else if(fieldType == float.class) {
+                                field.setFloat(obj, field.getFloat(obj) * 0f);
+                            } else if(fieldType == long.class) {
+                                field.setLong(obj, field.getLong(obj) * 0L);
+                            } else if(fieldType == double.class) {
+                                field.setDouble(obj, field.getDouble(obj) * 0.0);
+                            } else if(fieldType == short.class) {
+                                field.setShort(obj, (short)(field.getShort(obj) * 0));
+                            } else if(fieldType == byte.class) {
+                                field.setByte(obj, (byte)(field.getByte(obj) * 0));
+                            } else if(fieldType == char.class) {
+                                field.setChar(obj, (char)0);
+                            } else if(Number.class.isAssignableFrom(fieldType)) {
+                                Number number = (Number) field.get(obj);
+                                if(number != null) {
+                                    double value = number.doubleValue();
+                                    if(fieldType == Integer.class) {
+                                        field.set(obj, (int)(value * 0));
+                                    } else if(fieldType == Float.class) {
+                                        field.set(obj, (float)(value * 0f));
+                                    } else if(fieldType == Long.class) {
+                                        field.set(obj, (long)(value * 0L));
+                                    } else if(fieldType == Double.class) {
+                                        field.set(obj, value * 0.0);
+                                    } else if(fieldType == Short.class) {
+                                        field.set(obj, (short)(value * 0));
+                                    } else if(fieldType == Byte.class) {
+                                        field.set(obj, (byte)(value * 0));
+                                    }
+                                }
+                            } else if(fieldType == Seq.class || java.util.Collection.class.isAssignableFrom(fieldType)) {
+                                java.util.Collection<?> collection = (java.util.Collection<?>) field.get(obj);
+                                if(collection != null) {
+                                    collection.clear();
+                                    try {
+                                        java.lang.reflect.Field sizeField = collection.getClass().getDeclaredField("size");
+                                        sizeField.setAccessible(true);
+                                        if(sizeField.getType() == int.class) {
+                                            sizeField.setInt(collection, sizeField.getInt(collection) * 0);
+                                        }
+                                    } catch(Exception ignored) {}
+                                }
+                            }
+                        } catch(Exception e) {
+                            Log.debug("Failed to multiply field " + field.getName() + ": " + e.getMessage());
+                        }
+                    }
+                    currentClass = currentClass.getSuperclass();
+                }
+            } catch(Exception e) {
+                Log.debug("Failed to multiply object fields: " + e.getMessage());
+            }
         }
         
         @Override
@@ -474,6 +1205,18 @@ public class RBMKRod extends RBMKBase {
             pane.setOverscroll(false, false);
             main.add(pane).maxHeight(300);
             table.top().add(main);
+        }
+        /**
+         * 检查当前燃料是否危险
+         * @return 是否危险
+         */
+        public boolean isCurrentFuelDangerous() {
+            Item fuel = getCurrentFuel();
+            if(fuel != null) {
+                RBMKFuelData.FuelProperties props = RBMKFuelData.getFuelProperties(fuel);
+                return props != null && props.dangerous;
+            }
+            return false;
         }
     }
 }

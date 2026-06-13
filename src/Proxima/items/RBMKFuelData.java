@@ -21,17 +21,18 @@ public class RBMKFuelData {
         public float meltingPoint = 2000f; // 熔点
         public float xenonGenerationRate = 0.01f; // 氙毒产生速率
         public float fuelConsumptionRate = 0.001f; // 燃料消耗速率
-        
+        public boolean dangerous = false;  // 是否危险（爆炸时产生无限范围杀伤）
+
         public FuelProperties() {}
-        
+
         public FuelProperties(float heat, float enrichment, boolean isNeutronSource, float meltingPoint) {
             this.heat = heat;
             this.enrichment = enrichment;
             this.isNeutronSource = isNeutronSource;
             this.meltingPoint = meltingPoint;
         }
-        
-        public FuelProperties(float heat, float enrichment, boolean isNeutronSource, float meltingPoint, 
+
+        public FuelProperties(float heat, float enrichment, boolean isNeutronSource, float meltingPoint,
                               float xenonGenerationRate, float fuelConsumptionRate) {
             this.heat = heat;
             this.enrichment = enrichment;
@@ -39,6 +40,18 @@ public class RBMKFuelData {
             this.meltingPoint = meltingPoint;
             this.xenonGenerationRate = xenonGenerationRate;
             this.fuelConsumptionRate = fuelConsumptionRate;
+        }
+
+        // 新增：完整构造函数，包含dangerous参数
+        public FuelProperties(float heat, float enrichment, boolean isNeutronSource, float meltingPoint,
+                              float xenonGenerationRate, float fuelConsumptionRate, boolean dangerous) {
+            this.heat = heat;
+            this.enrichment = enrichment;
+            this.isNeutronSource = isNeutronSource;
+            this.meltingPoint = meltingPoint;
+            this.xenonGenerationRate = xenonGenerationRate;
+            this.fuelConsumptionRate = fuelConsumptionRate;
+            this.dangerous = dangerous;
         }
     }
     
@@ -86,23 +99,9 @@ public class RBMKFuelData {
             registerFuel(ProximaItems.heu235UraniumFuel,
                 new FuelProperties(10f, 1.0f, false, 2000f, 0.01f, 0.001f));
         }
-        
-        // 钍燃料棒
-        if (ProximaItems.thoriumFuelRod != null) {
-            registerFuel(ProximaItems.thoriumFuelRod,
-                new FuelProperties(8f, 0.8f, false, 2000f, 0.008f, 0.0012f));
-        }
-        
-        // 铀燃料棒
-        if (ProximaItems.uraniumFuelRod != null) {
-            registerFuel(ProximaItems.uraniumFuelRod,
-                new FuelProperties(12f, 1.0f, false, 2000f, 0.012f, 0.001f));
-        }
-        
-        // 钚燃料棒
-        if (ProximaItems.plutoniumFuelRod != null) {
-            registerFuel(ProximaItems.plutoniumFuelRod,
-                new FuelProperties(18f, 1.2f, false, 2000f, 0.018f, 0.0008f));
+        if (ProximaItems.dgammaFuel != null) {
+            registerFuel(ProximaItems.dgammaFuel,
+                    new FuelProperties(25f, 1.5f, false, 2500f, 0.025f, 0.0005f, true)); // dangerous = true
         }
     }
 }

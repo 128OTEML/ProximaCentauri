@@ -3,9 +3,13 @@ package Proxima.block;
 import arc.struct.*;
 import arc.graphics.Color;
 import mindustry.content.*;
+import mindustry.entities.bullet.BasicBulletType;
+import mindustry.gen.Sounds;
 import mindustry.type.*;
 import mindustry.world.*;
+import mindustry.world.blocks.defense.turrets.ItemTurret;
 import mindustry.world.blocks.environment.*;
+import mindustry.world.consumers.ConsumeCoolant;
 import mindustry.world.consumers.ConsumeLiquid;
 import mindustry.world.meta.BuildVisibility;
 import Proxima.items.*;
@@ -98,6 +102,9 @@ public class ProximaBlocks{
 
     // 电线杆
     public static Block powerPole;
+
+    // 炮台在这里
+    public static Block drizzle;
 
 
     public static void load(){
@@ -601,6 +608,114 @@ public class ProximaBlocks{
 
             laserColor1 = Color.valueOf("ffcc66");
             laserColor2 = Color.valueOf("ffaa44");
+        }};
+// 低伤害密集弹幕炮台
+        drizzle = new ItemTurret("drizzle"){{
+            size = 2;
+            health = 900;
+            armor = 3;
+            requirements(Category.turret, ItemStack.with(
+                    Items.copper, 30,
+                    Items.lead, 20
+            ));
+            // 射击参数 - 高射速密集弹幕
+            reload = 3f;                    // 3帧一发，每秒约20发
+            range = 200f;                    // 射程
+            inaccuracy = 8f;                 // 散布角度，形成弹幕效果
+            recoil = 0.8f;                   // 后坐力
+            recoilTime = 10f;                // 后坐力恢复时间
+            rotateSpeed = 6f;                // 旋转速度
+
+            // 弹药容量
+            maxAmmo = 40;
+            ammoPerShot = 1;
+
+            // 音效
+            shootSound = Sounds.shootSap;
+            shootSoundVolume = 0.5f;
+
+            // 特效
+            shootEffect = Fx.none;
+            smokeEffect = Fx.none;
+
+            // 视觉效果
+            heatColor = Color.valueOf("00000000");
+            outlineColor = Color.valueOf("00000000");
+            shootY = 5f;
+
+            // 始终解锁（调试用，正式可改为false）
+            alwaysUnlocked = true;
+            buildTime = 90f;
+
+            coolant = new ConsumeCoolant(0.1f);
+
+            // 弹药定义
+            ammo(
+                    ProximaItems.iron, new BasicBulletType(){{
+                        sprite = "proxima-ice-shard";
+                        width = 3f;
+                        height = 3f;
+                        shrinkY = 0f;
+
+                        // 颜色
+                        hitColor = lightColor = frontColor = backColor = trailColor = Color.valueOf("D0D0D0FF");
+
+                        // 弹道效果
+                        trailWidth = 0.8f;
+                        trailLength = 4;
+
+                        // 伤害参数 - 低伤害
+                        damage = 12f;
+                        armorMultiplier = 0.5f;
+
+                        // 飞行参数
+                        speed = 9f;
+                        lifetime = 22f;              // 射程约198
+                        rangeOverride = 200f;
+
+                        // 弹幕效果 - 可穿透
+                        pierce = false;
+
+                        // 特效
+                        shootEffect = Fx.shootSmall;
+                        hitEffect = Fx.hitBulletSmall;
+                        despawnEffect = Fx.hitBulletSmall;
+                        hitSound = Sounds.shieldHit;
+
+                        // 弹药倍率
+                        ammoMultiplier = 2f;         // 每次消耗1个弹药产生2发子弹
+                    }},
+
+                    ProximaItems.manganese, new BasicBulletType(){{
+                        sprite = "proxima-ice-shard";
+                        width = 3f;
+                        height = 3f;
+                        shrinkY = 0f;
+
+                        hitColor = lightColor = frontColor = backColor = trailColor = Color.valueOf("E35745FF");
+
+                        trailWidth = 0.8f;
+                        trailLength = 5;
+
+                        // 更低的伤害，但更高射速
+                        damage = 8f;
+                        armorMultiplier = 0.3f;
+
+                        speed = 11f;
+                        lifetime = 18f;
+                        rangeOverride = 198f;
+
+                        // 电击特效
+                        statusDuration = 20f;
+
+                        shootEffect = Fx.shootSmallColor;
+                        hitEffect = Fx.hitLaserColor;
+                        despawnEffect = Fx.hitLaserColor;
+                        hitSound = Sounds.door;
+
+                        ammoMultiplier = 3f;
+                    }}
+            );
         }};
     }
 }

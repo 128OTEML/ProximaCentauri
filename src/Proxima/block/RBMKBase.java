@@ -34,6 +34,7 @@ import static mindustry.Vars.*;
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild;
 import mindustry.logic.LAccess;
 import mindustry.world.Edges;
+import mindustry.world.modules.ItemModule;
 
 /**
  * RBMK反应堆基础方块
@@ -263,10 +264,19 @@ public class RBMKBase extends PowerGenerator{
 
         @Override
         public void overwrote(Seq<Building> previous){
-            //only add prev items when core is not linked
+            // 确保 items 已初始化
+            if(items == null){
+                items = new ItemModule();
+            }
+
+            // only add prev items when core is not linked
             if(linkedCore == null){
                 for(Building other : previous){
-                    if(other.items != null && other.items != items && !(other instanceof RBMKBaseBuild b && b.linkedCore != null)){
+                    if(other != null && other.items != null && other.items != items){
+                        // 检查链接
+                        if(other instanceof RBMKBaseBuild b && b.linkedCore != null){
+                            continue;
+                        }
                         items.add(other.items);
                     }
                 }

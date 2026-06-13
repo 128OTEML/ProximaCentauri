@@ -1,5 +1,6 @@
 package Proxima.content;
 
+import Proxima.units.ProtectedUnitType;
 import arc.Core;
 import arc.func.Cons;
 import arc.graphics.Color;
@@ -28,6 +29,7 @@ import mindustry.ai.types.CommandAI;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import arc.math.Mathf;
+import mindustry.content.Liquids;
 import mindustry.content.StatusEffects;
 import mindustry.entities.*;
 import mindustry.entities.abilities.*;
@@ -71,6 +73,8 @@ public class ProximaUnitTypes {
 
     public static UnitType proximaCoreMech;
     public static UnitType proximaTrain;
+    public static UnitType ProtectedUnit;
+    public static UnitType sprout;
 
     public static void load() {
         proximaCoreMech = new UnitType("proxima-core-mech") {{
@@ -219,6 +223,132 @@ public class ProximaUnitTypes {
             // 死亡和碰撞音效音量
             wreckSoundVolume = 0.8f;
             deathSoundVolume = 0.7f;
+        }};
+        ProtectedUnit = new ProtectedUnitType("proxima-boss") {{
+            // 基础配置
+            health = 50000f;              // 基础血量（会被保护系统接管）
+            armor = 30f;                 // 护甲
+            hitSize = 32f;               // 碰撞箱大小（约4格）
+
+
+            // 移动参数
+            flying = true;               // 飞行单位
+            speed = 20f;               // 移动速度
+            drag = 0.02f;               // 阻力
+            accel = 0.05f;              // 加速度
+            rotateSpeed = 3f;            // 旋转速度
+
+            // 战斗参数
+            targetAir = true;
+            targetGround = true;
+            range = 400f;                // 攻击范围
+
+            // 视觉参数
+            lowAltitude = false;
+            engineSize = 3f;
+
+            // 武器配置
+            weapons.add(new Weapon("proxima-boss-cannon") {{
+                x = 0f;
+                y = 10f;
+                reload = 60f;
+                shootSound = Sounds.shootReign;
+                bullet = new BasicBulletType(8f, 200) {{
+                    lifetime = 60f;
+                    damage = 50;
+                    splashDamage = 100;
+                    splashDamageRadius = 40f;
+                    status = StatusEffects.burning;
+                    statusDuration = 300f;
+                    hitEffect = Fx.hitLancer;
+                    shootEffect = Fx.shootBig;
+                    smokeEffect = Fx.shootBigSmoke;
+                }};
+            }});
+
+            // 总是解锁（用于测试）
+            alwaysUnlocked = true;
+        }};
+        sprout = new UnitType("sprout") {{
+            // 构造器 - 多足单位
+            constructor = LegsUnit::create;
+
+            // 基础配置
+            isEnemy = true;
+            flying = false;
+
+            // 移动参数 - 植物系较慢速
+            speed = 1.2f;
+            hitSize = 10.4f;
+            health = 180f;
+            armor = 2f;
+            drag = 0.4f;
+            accel = 0.3f;
+            rotateSpeed = 4f;
+
+            // 多足配置 (4条腿，类似小型蜘蛛/植物根茎)
+            legCount = 4;
+            legGroupSize = 2;
+            legLength = 7f;
+            legSpeed = 0.12f;
+            legForwardScl = 1.2f;
+            legBaseOffset = 0f;
+            legMoveSpace = 0.9f;
+            legContinuousMove = true;
+
+            // 视觉参数
+            lowAltitude = true;
+            engineSize = -1f;  // 无引擎
+
+            // 战斗参数
+            targetAir = false;   // 只能攻击地面
+            targetGround = true;
+            range = 120f;
+
+            // 颜色参数 (植物系)
+            lightColor = Color.valueOf("6aad49");
+
+            // 液体恢复能力 - 在水中恢复生命
+            abilities.add(new LiquidRegenAbility() {{
+                liquid = Liquids.water;      // 使用水作为恢复液体
+                slurpSpeed = 8f;             // 每秒吸取8单位液体
+                regenPerSlurp = 1f;          // 每吸取1单位液体恢复1生命值
+                slurpEffectChance = 0.5f;    // 50%概率触发治疗特效
+                slurpEffect = Fx.heal;       // 治疗特效
+            }});
+
+            // 武器 - 绿色植物团弹
+            weapons.add(new Weapon("sprout-cannon") {{
+                x = 0f;
+                y = 4f;
+                reload = 35f;
+                shootY = 2f;
+                shootSound = Sounds.shoot;
+
+                bullet = new BasicBulletType(4.5f, 28) {{
+                    sprite = "proxima-asteroid-bullet";
+                    width = 8f;
+                    height = 8f;
+                    lifetime = 50f;
+                    damage = 12;
+                    splashDamage = 12;
+                    splashDamageRadius = 12f;
+                    status = StatusEffects.corroded;
+                    statusDuration = 60f;
+
+                    // 绿色弹丸
+                    backColor = frontColor = trailColor = Color.valueOf("6aad49");
+                    hitEffect = shootEffect = smokeEffect = Fx.none;
+                    hitEffect = Fx.none;
+
+                    collidesAir = false;
+                    collidesGround = true;
+                    shrinkX = shrinkY = 0.5f;
+                }};
+            }});
+
+            // 总是解锁（测试用）
+            alwaysUnlocked = true;
         }};
     }
 }

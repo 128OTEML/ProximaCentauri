@@ -8,18 +8,12 @@ import Proxima.liquids.ProximaLiquids;
 import Proxima.special.SpecialContent;
 import Proxima.input.ProximaInputHandler;
 import arc.*;
-import arc.graphics.g2d.*;
-import arc.input.*;
-import arc.math.*;
-import arc.math.geom.*;
 import Proxima.block.*;
 import Proxima.items.*;
 import arc.util.Log;
 import arc.util.Time;
 import mindustry.*;
 import mindustry.game.EventType.*;
-import mindustry.gen.*;
-import mindustry.graphics.*;
 import mindustry.input.DesktopInput;
 import mindustry.mod.*;
 import mindustry.ui.dialogs.BaseDialog;
@@ -61,5 +55,4 @@ public class ProximaCentauriMod extends Mod{
         ProximaPlanets.load();
         ProximaTechTree.load();
     }
-
 }

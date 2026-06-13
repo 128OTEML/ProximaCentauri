@@ -1,5 +1,6 @@
 package Proxima.effects;
 
+import arc.audio.Sound;
 import arc.graphics.*;
 import arc.graphics.g2d.*;
 import arc.math.*;
@@ -1359,4 +1360,213 @@ public class ProximaFX{
 
         Draw.reset();
     });
+    public static Effect nuclearcloud = new Effect(120f, 1500f, e -> {
+        float size = e.rotation;
+        if(size <= 0f) size = 200f;
+
+        Rand r = Utils.rand;
+        r.setSeed(e.id);
+
+        // 主核云效果
+        Draw.color(Pal.lightOrange, Pal.lighterOrange, Color.gray, e.fin());
+        Draw.blend(Blending.additive);
+
+        // 核心爆炸云
+        float coreSize = size * (0.5f + e.fin() * 1.2f);
+        Fill.circle(e.x, e.y, coreSize);
+
+        Draw.blend();
+
+        // 烟雾层
+        Draw.color(Color.gray, Pal.rubble, e.fin());
+        for(int i = 0; i < 60; i++){
+            float f = Mathf.curve(e.fin(), 0f, 1f - r.random(0.3f));
+            float ang = r.random(360f);
+            float len = r.random(size * 0.8f) * pow2Out.apply(f);
+            float rad = r.random(15f, 45f) * (1f - pow3In.apply(f));
+
+            if(f < 1f){
+                Vec2 v = Tmp.v1.trns(ang, len).add(e.x, e.y);
+                Fill.circle(v.x, v.y, rad);
+            }
+        }
+
+        // 热浪/火焰层
+        Draw.color(Pal.lightOrange, Pal.lighterOrange, e.fin());
+        for(int i = 0; i < 35; i++){
+            float f = Mathf.curve(e.fin(), 0f, 1f - r.random(0.4f));
+            float ang = r.random(360f);
+            float len = r.random(size * 1.2f) * pow3Out.apply(f);
+            float rad = r.random(8f, 28f) * (1f - pow2In.apply(f));
+
+            if(f < 1f){
+                Vec2 v = Tmp.v1.trns(ang, len).add(e.x, e.y);
+                Fill.circle(v.x, v.y, rad);
+            }
+        }
+
+        // 冲击波环
+        Draw.color(Color.white, 0.5f * e.fout());
+        Lines.stroke(Math.max(2f, size / 25f) * e.fout());
+        Lines.circle(e.x, e.y, size * (0.5f + pow2Out.apply(e.fin()) * 1.5f));
+
+        // 外缘光芒
+        Draw.color(Pal.lighterOrange, 0.6f * e.fout());
+        Lines.stroke(Math.max(1f, size / 30f) * e.fout());
+        Lines.circle(e.x, e.y, size * (0.6f + pow2Out.apply(e.fin()) * 1.8f));
+
+        // 辐射粒子效果
+        Draw.color(ProximaPal.melt, Color.gray, e.fout());
+        for(int i = 0; i < 80; i++){
+            float f = Mathf.curve(e.fin(), 0f, r.random(0.6f, 1f));
+            float ang = r.random(360f);
+            float len = r.random(size * 1.5f) * pow4Out.apply(f);
+            float rad = r.random(3f, 12f) * (1f - pow4In.apply(f));
+
+            if(f < 1f && f > 0.01f){
+                Vec2 v = Tmp.v1.trns(ang, len).add(e.x, e.y);
+                Fill.circle(v.x, v.y, rad);
+            }
+        }
+
+        // 上升烟雾柱
+        Draw.color(Color.gray, Pal.rubble, e.fout());
+        for(int i = 0; i < 40; i++){
+            float f = Mathf.curve(e.fin(), 0f, 1f - r.random(0.2f));
+            float ang = e.rotation + r.range(30f);
+            float len = r.random(size * 2f) * pow2Out.apply(f);
+            float rad = r.random(10f, 35f) * (1f - pow2In.apply(f));
+
+            if(f < 1f){
+                Vec2 v = Tmp.v1.trns(ang, len).add(e.x, e.y);
+                Fill.circle(v.x, v.y, rad);
+            }
+        }
+    }).layer(Layer.effect);
+    // 原子弹爆炸效果
+    public static Effect atomicBomb = new Effect(150f, 2000f, e -> {
+        float size = e.rotation;
+        if(size <= 0f) size = 300f;
+
+        Rand r = Utils.rand;
+        r.setSeed(e.id);
+
+        // 超亮闪光
+        Draw.color(Color.white);
+        Draw.blend(Blending.additive);
+        Fill.circle(e.x, e.y, size * 0.8f * e.fin());
+        Draw.blend();
+
+        // 蘑菇云核心
+        Draw.color(Pal.lightOrange, Pal.lighterOrange, e.fin());
+        float coreSize = size * (0.3f + e.fin() * 1.5f);
+        Fill.circle(e.x, e.y, coreSize);
+
+        // 多层爆炸环
+        for(int layer = 0; layer < 3; layer++){
+            float layerOffset = layer * 0.2f;
+            float alpha = 0.6f * (1f - layerOffset) * e.fout();
+            Draw.color(Pal.lightOrange, alpha);
+            Lines.stroke(Math.max(2f, size / 20f) * e.fout());
+            Lines.circle(e.x, e.y, size * (0.4f + layer * 0.3f + pow2Out.apply(e.fin()) * 2f));
+        }
+
+        // 冲击波
+        Draw.color(Color.white, 0.4f * e.fout());
+        Lines.stroke(size / 15f * e.fout());
+        Lines.circle(e.x, e.y, size * (0.6f + pow3Out.apply(e.fin()) * 3f));
+
+        // 碎片粒子
+        for(int i = 0; i < 150; i++){
+            float f = Mathf.curve(e.fin(), 0f, 1f - r.random(0.2f));
+            float ang = r.random(360f);
+            float len = r.random(size * 2.5f) * pow2Out.apply(f);
+            float rad = r.random(5f, 20f) * (1f - pow3In.apply(f));
+
+            if(f < 1f){
+                Vec2 v = Tmp.v1.trns(ang, len).add(e.x, e.y);
+                Draw.color(Pal.lightOrange, Color.gray, f);
+                Fill.circle(v.x, v.y, rad);
+            }
+        }
+    }).layer(Layer.effect);
+
+    // 辐射云效果
+    public static Effect radiationCloud = new Effect(180f, 800f, e -> {
+        float size = e.rotation;
+        if(size <= 0f) size = 150f;
+
+        Rand r = Utils.rand;
+        r.setSeed(e.id);
+
+        Draw.color(Color.green, 0.4f * e.fout());
+        Draw.blend(Blending.additive);
+
+        // 辐射云主体
+        for(int i = 0; i < 50; i++){
+            float f = Mathf.curve(e.fin(), 0f, 1f - r.random(0.4f));
+            float ang = r.random(360f);
+            float len = r.random(size) * pow3Out.apply(f);
+            float rad = r.random(8f, 25f) * (1f - pow2In.apply(f));
+
+            if(f < 1f){
+                Vec2 v = Tmp.v1.trns(ang, len).add(e.x, e.y);
+                Fill.circle(v.x, v.y, rad);
+            }
+        }
+
+        Draw.blend();
+
+        // 辐射粒子和火花
+        Draw.color(Color.yellow, Color.green, e.fin());
+        for(int i = 0; i < 60; i++){
+            float f = Mathf.curve(e.fin(), 0f, r.random(0.7f, 1f));
+            float ang = r.random(360f);
+            float len = r.random(size * 1.2f) * pow4Out.apply(f);
+            float rad = r.random(2f, 8f) * (1f - pow4In.apply(f));
+
+            if(f < 1f && f > 0.05f){
+                Vec2 v = Tmp.v1.trns(ang, len).add(e.x, e.y);
+                Fill.circle(v.x, v.y, rad);
+            }
+        }
+    }).layer(Layer.effect);
+
+    // 放射性污染效果
+    public static Effect radioactiveContamination = new Effect(240f, 600f, e -> {
+        float size = e.rotation;
+        if(size <= 0f) size = 100f;
+
+        Rand r = Utils.rand;
+        r.setSeed(e.id);
+
+        Draw.color(Color.yellow, Color.green, 0.3f * e.fout());
+
+        // 污染粒子云
+        for(int i = 0; i < 80; i++){
+            float f = Mathf.curve(e.fin(), 0f, 1f - r.random(0.5f));
+            float ang = r.random(360f);
+            float len = r.random(size * 1.5f) * pow2Out.apply(f);
+            float rad = r.random(3f, 15f) * (1f - pow2In.apply(f));
+
+            if(f < 1f){
+                Vec2 v = Tmp.v1.trns(ang, len).add(e.x, e.y);
+                Fill.circle(v.x, v.y, rad);
+            }
+        }
+
+        // 放射性闪烁粒子
+        Draw.color(Color.yellow, 0.6f * (1f - e.fin()));
+        for(int i = 0; i < 40; i++){
+            float f = Mathf.curve(e.fin(), 0f, r.random(0.6f, 1f));
+            float ang = r.random(360f);
+            float len = r.random(size) * pow3Out.apply(f);
+            float rad = r.random(1f, 5f) * (1f - pow3In.apply(f));
+
+            if(f < 1f && f > 0.1f){
+                Vec2 v = Tmp.v1.trns(ang, len).add(e.x, e.y);
+                Fill.circle(v.x, v.y, rad);
+            }
+        }
+    }).layer(Layer.debris);
 }
